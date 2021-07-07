@@ -8,7 +8,7 @@ on:
   release:
      types: [prereleased,released] 
 env:
-  IMAGE_PREFIX: ouestfrance/cdp
+  IMAGE_PREFIX: ouestfrance/cdp2
 jobs:
   build:
     name: Build
@@ -33,9 +33,6 @@ jobs:
           fi
           if [[ "${{github.event_name}}" == "push" && "${{github.ref}}" == "refs/heads/master" ]]; then
              TAG=$TAG,$IMAGE_PREFIX:latest 
-          fi
-          if [[ "${{github.event_name}}" == "push" && "${{github.ref}}" == "refs/heads/v2.x" ]]; then
-             TAG=$TAG,$IMAGE_PREFIX:v2.x-latest 
           fi
           echo ::set-output name=TAGS::$TAG       
       - name: Set up Python
