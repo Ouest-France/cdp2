@@ -7,6 +7,7 @@ import os, sys, re, base64, json
 import datetime
 
 from cdpcli.clicommand import CLICommand
+from cdpcli.mavencommand import MavenCommand
 from cdpcli.clidriver import CLIDriver, __doc__
 from docopt import docopt, DocoptExit
 from freezegun import freeze_time
@@ -59,16 +60,17 @@ class FakeCommand(object):
                 workingDir_from_assert = True
 
             commandes = {
-               TestCliDriver.image_name_git : "git ",
-               TestCliDriver.image_name_helm3 : "helm3 ",
-               TestCliDriver.image_name_helm2 : "helm2 ",
-               TestCliDriver.image_name_kubectl : "kubectl ",
-               TestCliDriver.image_name_kaniko : "/kaniko/executor ",
-               TestCliDriver.image_name_aws : "aws ",
-               TestCliDriver.image_name_conftest : 'cd %s && conftest ' % ('${PWD}' if workingDir_from_assert is True else workingDir_from_assert)
+               TestCliDriver.image_name_git : "git %s",
+               TestCliDriver.image_name_helm3 : "helm3 %s",
+               TestCliDriver.image_name_helm2 : "helm2 %s",
+               TestCliDriver.image_name_kubectl : "kubectl %s",
+               TestCliDriver.image_name_docker : "docker %s",
+               TestCliDriver.image_name_maven : self.__get_maven_cmd(self._verif_cmd[self._index].get('docker_image'), "%s") ,
+               TestCliDriver.image_name_aws : "aws %s",
+               TestCliDriver.image_name_conftest : 'cd %s && conftest' % ('${PWD}' if workingDir_from_assert is True else workingDir_from_assert) + " %s"
             }
 
-            cmd_assert = "%s%s" % (commandes.get(image, ""), self._verif_cmd[self._index]['cmd'])
+            cmd_assert = (commandes.get(image, "%s") % self._verif_cmd[self._index]['cmd'])
 
             print("Attendu : %s" % cmd_assert)
             print("recu    : %s" % cmd)
@@ -111,31 +113,14 @@ class FakeCommand(object):
     def verify_commands(self):
         self._tc.assertEqual(len(self._verif_cmd), self._index)
 
-    def __get_rundocker_cmd(self, docker_image, prg_cmd, volume_from = None, with_entrypoint = True, workingDir=True):
+    def __get_maven_cmd(self, docker_image, prg_cmd):
 
-        for env in os.environ:
-            if env.startswith('CI') or env.startswith('CDP') or env.startswith('AWS') or env.startswith('GIT') or env.startswith('KUBERNETES'):
-                run_docker_cmd = '%s -e %s' % (run_docker_cmd, env)
+        if docker_image is None:
+           return ""
 
-        run_docker_cmd = '%s -v /var/run/docker.sock:/var/run/docker.sock' % run_docker_cmd
-
-        if volume_from == 'k8s':
-            run_docker_cmd = '%s --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}")' % (run_docker_cmd)
-        elif volume_from == 'docker':
-            run_docker_cmd = '%s --volumes-from $(docker ps -aqf "name=${HOSTNAME}-build")' % (run_docker_cmd)
-
-
-        if workingDir is not False:
-            run_docker_cmd = '%s -w %s' % (run_docker_cmd, '${PWD}' if workingDir is True else workingDir)
-        run_docker_cmd = '%s %s' % (run_docker_cmd, docker_image)
-
-        if (with_entrypoint):
-            run_docker_cmd = '%s %s' % (run_docker_cmd, prg_cmd)
-        else:
-            run_docker_cmd = '%s /bin/sh -c \'%s\'' % (run_docker_cmd, prg_cmd)
+        run_docker_cmd = MavenCommand.get_command(prg_cmd,docker_image)
 
         return run_docker_cmd
-
 
 class TestCliDriver(unittest.TestCase):
     unittest.TestCase.maxDiff = None
@@ -184,12 +169,10 @@ class TestCliDriver(unittest.TestCase):
     image_name_helm3 = 'ouestfrance/cdp-helm:3.2.4'
     image_name_helm2 = 'ouestfrance/cdp-helm:2.16.3'
     image_name_conftest = 'instrumenta/conftest:v0.18.2'
-    image_name_kaniko = 'kaniko'
+    image_name_maven = 'maven:3.5.3-jdk-8'
+    image_name_docker = 'docker'
     ingress_tlsSecretName = 'contour/secretName'
     login_string = "echo '{\\\"auths\\\": {\\\"%s\\\": {\\\"auth\\\": \\\"%s\\\"}}}' > ~/.docker/config.json"
-    kaniko_full_build = '--context . --dockerfile ./Dockerfile --destination %s/%s:%s'
-    kaniko_build = '--context . --dockerfile ./Dockerfile --destination %s:%s'
-    kaniko_multi_build = '--context %s --dockerfile %s --destination %s:%s'
     chart_repo='infrastructure-repository-helm-charts%2Finfrastructure-repository-helm-charts'
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
@@ -585,39 +568,10 @@ services:
         os.environ['CDP_CONFTEST_REPO'] = "sipa-ouest-france/infrastructure/conftest/infrastructure-repository-conftest"
         os.environ["CDP_CHART_REPO"] = TestCliDriver.chart_repo
 
-        
-    def test_build_verbose_simulatemergeon_sleep(self):
-        # Create FakeCommand
-        branch_name = 'master'
-        image_name = 'maven:3.5-jdk-8'
-        command_name = 'mvn clean install'
-        sleep = 10
-        verif_cmd = [
-            {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
-            {'cmd': 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
-            {'cmd': 'config user.name \"%s\"' % TestCliDriver.gitlab_user_name, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
-            {'cmd': 'fetch', 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
-            {'cmd': 'checkout %s' % branch_name, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
-            {'cmd': 'reset --hard origin/%s' % branch_name, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
-            {'cmd': 'merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
-            {'cmd': command_name, 'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kaniko},
-            {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
-        ]
-        self.__run_CLIDriver({ 'build', '--verbose', '--command=%s' % command_name, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
-
-    def test_build_volumefromdocker(self):
-        # Create FakeCommand
-        image_name = 'maven:3.5-jdk-8'
-        command_name = 'mvn clean install'
-        verif_cmd = [
-            {'cmd': command_name, 'volume_from' : 'docker', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image':  TestCliDriver.image_name_kaniko}
-        ]
-        self.__run_CLIDriver({ 'build',  '--command=%s' % command_name, '--volume-from=docker' }, verif_cmd)
-
     def test_maven_goals_verbose_simulatemergeon_sleep(self):
         # Create FakeCommand
         branch_name = 'master'
-        image_name_maven = 'maven:3.5-jdk-8'
+        image_name_maven = 'maven:3.5.3-jdk-8'
         goals = 'clean install -DskipTests'
         sleep = 10
         verif_cmd = [
@@ -629,15 +583,16 @@ services:
             {'cmd': 'reset --hard origin/%s' % branch_name, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
             {'cmd': 'merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
+            {'cmd': 'docker pull %s' % (image_name_maven), 'output': 'unnecessary'},
             {'cmd': 'mvn %s -s maven-settings.xml' % goals, 'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image': '%s' % image_name_maven},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'maven', '--verbose', '--goals=%s' % goals, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
+        self.__run_CLIDriver({ 'maven', '--verbose', '--docker-version=3.5.3-jdk-8', '--goals=%s' % goals, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
 
 
     def test_maven_deployrelease_mavenopts(self):
         # Create FakeCommand
-        image_name_maven = 'maven:3.5-jdk-8'
+        image_name_maven = 'maven:3.5.3-jdk-8'
         maven_opts = '-Djava.awt.headless=true -Dmaven.repo.local=./.m2/repository -e'
         verif_cmd = [
             {'cmd': 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
@@ -645,6 +600,7 @@ services:
             {'cmd': 'fetch', 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
             {'cmd': 'checkout %s' % TestCliDriver.ci_commit_ref_name, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
+            {'cmd': 'docker pull %s' % (image_name_maven), 'output': 'unnecessary'},
             {'cmd': 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:2.5.3:prepare org.apache.maven.plugins:maven-release-plugin:2.5.3:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git -DreleaseProfiles=release -Darguments="-DskipTests -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::%s/%s %s" %s -s maven-settings.xml' % (TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release, maven_opts, maven_opts), 'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image': '%s' % image_name_maven}
         ]
 
@@ -653,7 +609,7 @@ services:
 
     def test_maven_deployrelease_customrepo(self):
         # Create FakeCommand
-        image_name_maven = 'maven:3.5-jdk-8'
+        image_name_maven = 'maven:3.5.3-jdk-8'
         maven_opts = '-Djava.awt.headless=true -Dmaven.repo.local=./.m2/repository -e'
         verif_cmd = [
             {'cmd': 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
@@ -661,6 +617,7 @@ services:
             {'cmd': 'fetch', 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
             {'cmd': 'checkout %s' % TestCliDriver.ci_commit_ref_name, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
+            {'cmd': 'docker pull %s' % (image_name_maven), 'output': 'unnecessary'},
             {'cmd': 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:2.5.3:prepare org.apache.maven.plugins:maven-release-plugin:2.5.3:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git -DreleaseProfiles=release -Darguments="-DskipTests -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::http://repo.fr/test %s" %s -s maven-settings.xml' % (maven_opts,maven_opts) ,'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image': '%s' % image_name_maven}
         ]
 
@@ -671,7 +628,7 @@ services:
     def test_maven_deployrelease_mavenreleaseversion(self):
         # Create FakeCommand
         branch_name = 'master'
-        image_version = '3.5-jdk-8'
+        image_version = '3.5.3-jdk-8'
         maven_release_version = '1.0.0'
         goals = 'clean install -DskipTests'
         verif_cmd = [
@@ -680,6 +637,7 @@ services:
             {'cmd': 'fetch', 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
             {'cmd': 'checkout %s' % TestCliDriver.ci_commit_ref_name, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
+            {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
             {'cmd': 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git -DreleaseProfiles=release -Darguments="-DskipTests -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::%s/%s" -s maven-settings.xml' % (maven_release_version, maven_release_version, TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release), 'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image': 'maven:%s' % image_version}
         ]
 
@@ -688,10 +646,11 @@ services:
     def test_maven_deploysnapshot(self):
         # Create FakeCommand
         branch_name = 'master'
-        image_version = '3.5-jdk-8'
+        image_version = '3.5.3-jdk-8'
         goals = 'clean install -DskipTests'
         verif_cmd = [
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
+            {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
             {'cmd': 'mvn deploy -DskipTests -DskipITs -DaltDeploymentRepository=snapshot::default::%s/%s -s maven-settings.xml' % (TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_snapshot), 'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image' : 'maven:%s' % image_version}
         ]
 
@@ -710,8 +669,8 @@ services:
             {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
             {'cmd': self.__getLoginString(TestCliDriver.ci_registry,TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': TestCliDriver.kaniko_build % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
-            {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
+            {'cmd': 'docker build -t %s:%s -f ./Dockerfile .' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s:%s' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-gitlab-registry', '--login-registry=harbor', '--sleep=%s' % sleep },
             verif_cmd, docker_host = docker_host, env_vars = {'DOCKER_HOST': docker_host, 'CI_REGISTRY': TestCliDriver.ci_registry})
@@ -726,7 +685,8 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': TestCliDriver.kaniko_build % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
+            {'cmd': 'docker build -t %s/%s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name,TestCliDriver.ci_project_name,TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s/%s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name,TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--sleep=%s' % sleep },
@@ -744,9 +704,11 @@ services:
           verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./distribution/php7-fpm/Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': TestCliDriver.kaniko_multi_build % ("./distribution/php7-fpm","./distribution/php7-fpm/Dockerfile",TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/php",  TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
+            {'cmd': 'docker build -t %s:%s -f %s %s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/php",  TestCliDriver.ci_commit_ref_slug,"./distribution/php7-fpm/Dockerfile","./distribution/php7-fpm"), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s:%s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/php",  TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            
             {'cmd': 'hadolint ./distribution/nginx/Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': TestCliDriver.kaniko_multi_build % ("./distribution/nginx","./distribution/nginx/Dockerfile",TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/nginx",  TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
+            {'cmd': 'docker build -t %s:%s -f %s %s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/nginx",  TestCliDriver.ci_commit_ref_slug,"./distribution/nginx/Dockerfile","./distribution/nginx"), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s:%s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/nginx",  TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'}
           ]
           self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor',"--build-file=cdp-build-file.yml"}, verif_cmd)
 
@@ -757,7 +719,8 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString( TestCliDriver.cdp_custom_registry, TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': TestCliDriver.kaniko_full_build % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko}
+            {'cmd': 'docker build -t %s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1' }, verif_cmd)
 
@@ -767,7 +730,8 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString( TestCliDriver.cdp_custom_registry, TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': (TestCliDriver.kaniko_full_build + " --build-arg %s --build-arg %s") % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha,"param1=value1","param2=value2"), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko}
+            {'cmd': 'docker build -t %s/%s:%s -f ./Dockerfile . --build-arg %s --build-arg %s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha,"param1=value1","param2=value2"), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1', '--build-arg=param1=value1', '--build-arg=param2=value2' }, verif_cmd)
 
@@ -777,7 +741,8 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': TestCliDriver.kaniko_build % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name, "test"), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
+            {'cmd': 'docker build -t %s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name, "test"), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name, "test"), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--image-tag=test' }, verif_cmd)
 
@@ -787,8 +752,8 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_custom_registry,TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': (TestCliDriver.kaniko_full_build + " --target cdp") % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower() + "/cdp" , TestCliDriver.ci_commit_sha), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
-        ]
+            {'cmd': 'docker build -t %s/%s/cdp:%s -f ./Dockerfile . --target cdp' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s/%s/cdp:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}        ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1','--docker-build-target=cdp'}, verif_cmd)
 
     def test_docker_imagetagsha1_useawsecr(self):
@@ -801,7 +766,8 @@ services:
             {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
             {'cmd': 'ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': TestCliDriver.kaniko_full_build % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
+            {'cmd': 'docker build -t %s/%s:%s -f ./Dockerfile .' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s/%s:%s' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-registry=aws-ecr', '--image-tag-sha1' }, verif_cmd, env_vars = {'CDP_ECR_PATH': aws_host})
 
