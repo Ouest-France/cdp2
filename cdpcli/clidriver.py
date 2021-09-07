@@ -79,7 +79,7 @@ Options:
     --docker-image-git=<image_name_git>                        Docker image which execute git command [DEPRECATED].
     --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [DEPRECATED].
     --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [DEPRECATED].
-    --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [DEPRECATED].
+    --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
     --docker-image-conftest=<image_name_conftest>              Docker image which execute conftest command [DEPRECATED].
     --docker-image=<image_name>                                Specify docker image name for build project [DEPRECATED].
     --docker-build-target=<target_name>                        Specify target in multi stage build
@@ -136,8 +136,8 @@ import shutil
 from .Context import Context
 from .clicommand import CLICommand
 from cdpcli import __version__
-from .kanikocommand import KanikoCommand
 from .dockercommand import DockerCommand
+from .mavencommand import MavenCommand
 from .gitcommand import GitCommand
 from .awscommand import AwsCommand
 from .kubectlcommand import KubectlCommand
@@ -187,7 +187,7 @@ class CLIDriver(object):
             self._context = Context(opt, cmd)
             LOG.verbose('Context : %s', self._context.__dict__)
 
-            deprecated = {'docker-version','docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-maven','docker-image-conftest','docker-image','use-docker-compose','namespace-project-branch-name'}
+            deprecated = {'docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-conftest','docker-image','use-docker-compose','namespace-project-branch-name'}
             for option in deprecated:
                if (self._context.getParamOrEnv(option)):
                  LOG.warning("\x1b[31;1mWARN : Option %s is DEPRECATED and will not be used\x1b[0m",option)
@@ -199,8 +199,12 @@ class CLIDriver(object):
                  opt["--helm-version"] = helm_version
 
             if self._context.opt['--create-default-helm']:
-                 LOG.warning("\x1b[31;1mWARN : Option -create-default-helm is DEPRECATED and is replaced by --use-chart=legacy\x1b[0m")
+                 LOG.warning("\x1b[31;1mWARN : Option --create-default-helm is DEPRECATED and is replaced by --use-chart=legacy\x1b[0m")
                  opt["--use-chart"] = "legacy"
+
+            if self._context.opt['--docker-version']:
+                 LOG.warning("\x1b[31;1mWARN : Option --docker-version is DEPRECATED and is replaced by --docker-image-maven=maven:%s\x1b[0m" % self._context.opt['--docker-version'])
+                 opt["--docker-image-maven"] = "maven:%s" % self._context.opt['--docker-version']
 
             if (not self._context.opt['--namespace-project-name'] and not self._context.opt['--namespace-name']):
                 opt["--namespace-project-name"] = True                      
@@ -212,6 +216,7 @@ class CLIDriver(object):
                 self.__build()
 
             if self._context.opt['maven']:
+                check_runner_permissions("maven")
                 self.__maven()
 
             if self._context.opt['docker']:
@@ -236,10 +241,7 @@ class CLIDriver(object):
 
 
     def __build(self):
-        self.__simulate_merge_on()
-
-        docker_image_cmd = KanikoCommand(self._cmd,'', self._context.opt['--volume-from'])
-        docker_image_cmd.run(self._context.opt['--command'])
+        raise ValueError("build command is no longer supported")
 
     def __maven(self):
         force_git_config = False
@@ -274,7 +276,8 @@ class CLIDriver(object):
 
         self._cmd.run_command('cp /cdp/maven/settings.xml %s' % settings)
 
-        self._cmd.run_command(command)
+        maven_cmd = MavenCommand(self._cmd, self._context.opt['--docker-image-maven'])
+        maven_cmd.run(command)
 
     def __docker(self):
         if self._context.opt['--use-aws-ecr'] or self._context.opt['--use-registry'] == 'aws-ecr':
@@ -675,7 +678,7 @@ class CLIDriver(object):
       return prefixTag
         
     def __buildTagAndPushOnDockerRegistry(self, tag):
-        kaniko_cmd = KanikoCommand(self._cmd, '', self._context.opt['--volume-from'], True)
+        docker_cmd = DockerCommand(self._cmd, '', self._context.opt['--volume-from'], True)
         image_tag = self.__getImageTag(self.__getImageName(), tag)
         if self._context.opt['--use-docker-compose']:
              raise ValueError('docker-compose is deprecated.')
@@ -684,12 +687,13 @@ class CLIDriver(object):
           for image_to_build in images_to_build:
             dockerfile = image_to_build["dockerfile"]
             context = image_to_build["context"]
+            full_dockerfile_path = context +'/' + dockerfile
             image_tag = image_to_build["image"]
             # Hadolint
             self._cmd.run_command('hadolint %s/%s' % (context, dockerfile), raise_error = False)
 
             # Tag docker image
-            docker_build_command = '--context %s --dockerfile %s/%s --destination %s' % (context,context,dockerfile,image_tag)
+            docker_build_command = 'build -t %s -f %s %s' % (image_tag, full_dockerfile_path, context)
             if self._context.opt['--docker-build-target']:
               docker_build_command = '%s --target %s' % (docker_build_command, self._context.opt['--docker-build-target'])
             if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and (self._context.opt['--use-custom-registry'] or self._context.opt['--use-registry'] == 'artifactory' or self._context.opt['--use-registry'] == 'custom'):
@@ -700,7 +704,9 @@ class CLIDriver(object):
                 for buildarg in self._context.opt['--build-arg']:
                     docker_build_command = '%s --build-arg %s' % (docker_build_command, buildarg)
 
-            kaniko_cmd.run(docker_build_command)
+            docker_cmd.run(docker_build_command)
+            # Push docker image
+            docker_cmd.run('push %s' % (image_tag))
             
     def __conftest(self):
         dir = self._context.opt['--deploy-spec-dir']
@@ -976,3 +982,7 @@ class CLIDriver(object):
             except Exception as e:
                 LOG.error("Error when downloading %s - Pass - %s/%s" % (chart_repo, use_chart,str(e)))               
 
+    def check_runner_permissions(self, commande):
+        cmds = os.get("CDP_ALLOWED_CMD","").split(",")
+        if not commande in cmds:
+           LOG.warning("\x1b[31;1mWARN : Command %s is not allowed in this environnement. Please change the runner tag\x1b[0m")
