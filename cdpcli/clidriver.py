@@ -220,15 +220,19 @@ class CLIDriver(object):
                 self.__maven()
 
             if self._context.opt['docker']:
+                self.check_runner_permissions("docker")
                 self.__docker()
 
             if self._context.opt['artifactory']:
+                self.check_runner_permissions("artifactory")
                 self.__artifactory()
 
             if self._context.opt['k8s']:
+                self.check_runner_permissions("k8s")
                 self.__k8s()
 
             if self._context.opt['conftest']:
+                self.check_runner_permissions("confest")
                 self.__conftest()
 
             if self._context.opt['validator-server']:
