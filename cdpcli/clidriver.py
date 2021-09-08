@@ -987,6 +987,6 @@ class CLIDriver(object):
                 LOG.error("Error when downloading %s - Pass - %s/%s" % (chart_repo, use_chart,str(e)))               
 
     def check_runner_permissions(self, commande):
-        cmds = os.getenv("CDP_ALLOWED_CMD","").split(",")
+        cmds = os.getenv("CDP_ALLOWED_CMD","maven,docker,k8s,artifactory,conftest").split(",")
         if not commande in cmds:
            LOG.warning("\x1b[31;1mWARN : Command cdp %s is not allowed in this environnement. Please change the runner tag\x1b[0m" % commande)
