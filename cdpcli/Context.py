@@ -17,6 +17,8 @@ class Context(object):
         self.auths = {}
         self.auths["auths"] = {}
 
+        print(opt)
+
         if opt['--put'] or opt['--delete']:
             self._registry = os.environ['CI_REGISTRY']
 
@@ -34,9 +36,9 @@ class Context(object):
                              os.getenv('CDP_%s_REGISTRY_USER' % opt['--login-registry'].upper(), None),
                              os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--login-registry'].upper(), None))
 
-        if opt['--use-aws-ecr'] or opt['--use-custom-registry'] or opt['--use-gitlab-registry'] or opt['--use-registry'] != 'none':
+        if opt['--use-aws-ecr'] or opt['--use-gitlab-registry'] or opt['--use-registry'] != 'none':
             if opt['maven'] or opt['docker'] or opt['k8s']:
-                if opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr' or opt['--use-custom-registry'] == 'aws-ecr' :
+                if opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr' :
                     ### Get login from AWS-CLI
                     aws_cmd = AwsCommand(cmd, "", None, True)
                     login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', aws_cmd.run('ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', dry_run=False)[0].strip())
@@ -46,7 +48,7 @@ class Context(object):
                     # Login AWS registry
                     self.__login(self._registry, self._registry_user_ro,self._registry_token_ro)
 
-                elif opt['--use-gitlab-registry'] or opt['--use-registry'] == 'gitlab' or opt['--use-custom-registry'] == 'gitlab':
+                elif opt['--use-gitlab-registry'] or opt['--use-registry'] == 'gitlab' :
                     # Use gitlab registry
                     self.__set_registry(os.getenv('CI_REGISTRY', None),
                                         os.getenv('CI_DEPLOY_USER', None),
@@ -55,17 +57,6 @@ class Context(object):
                     self.__login(os.getenv('CI_REGISTRY', None),
                                  os.getenv('CI_REGISTRY_USER', None),
                                  os.getenv('CI_JOB_TOKEN', None))
-
-                elif opt['--use-custom-registry']:
-                    #deprecated
-                    self.__set_registry(os.getenv('CDP_CUSTOM_REGISTRY', None),
-                                       os.getenv('CDP_CUSTOM_REGISTRY_USER', None),
-                                       os.getenv('CDP_CUSTOM_REGISTRY_READ_ONLY_TOKEN', None))
-                    # Login custom registry
-                    self.__login(os.getenv('CDP_CUSTOM_REGISTRY', None),
-                                 os.getenv('CDP_CUSTOM_REGISTRY_USER', None),
-                                 os.getenv('CDP_CUSTOM_REGISTRY_TOKEN', None))
-
                 else:
                     ### Used by '--use-registry' params
                     registry = opt['--use-registry'].upper()

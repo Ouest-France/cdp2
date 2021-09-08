@@ -28,7 +28,6 @@ Usage:
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [--helm-version=<version>]
-        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1 | --image-tag=<tag>] 
         [--image-prefix-tag=<tag>]
         [(--create-gitlab-secret)]
         [(--create-gitlab-secret-hook)]
@@ -42,7 +41,6 @@ Usage:
         [--chart-repo=<repo>] [--use-chart=<chart:branch>]
         [--timeout=<timeout>]
         [--tiller-namespace]
-        [--release-project-branch-name | --release-project-env-name | --release-project-name | --release-shortproject-name | --release-namespace-name | --release-custom-name=<release_name>]
         [--image-pull-secret] [--ingress-tlsSecretName=<secretName>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
@@ -114,7 +112,7 @@ Options:
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
     --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace [DEPRECATED]
     --use-aws-ecr                                              Use AWS ECR from k8s configuration for pull/push docker image. [DEPRECATED]
-    --use-custom-registry                                      Use custom registry for pull/push docker image. [DEPRECATED]
+    --use-custom-registry                                      Use custom registry for pull/push docker image. [DEPRECATED]. Replaced by use-registry=artifactory
     --use-docker                                               Use docker to build / push image [default].
     --use-docker-compose                                       Use docker-compose to build / push image / retag container [DEPRECATED]
     --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default]. [DEPRECATED]
@@ -184,6 +182,11 @@ class CLIDriver(object):
         if opt is None:
             raise ValueError('TODO')
         else:
+
+            if opt["--use-custom-registry"] :
+                 LOG.warning("\x1b[31;1mWARN : Option use-custom-registry is DEPRECATED. Use --use-registry=custom instead. Set to %s\x1b[0m")
+                 opt["--use-registry"] = "artifactory"
+
             self._context = Context(opt, cmd)
             LOG.verbose('Context : %s', self._context.__dict__)
 
@@ -198,15 +201,15 @@ class CLIDriver(object):
                  LOG.warning("\x1b[31;1mWARN : Option docker-image-helm is DEPRECATED. Use --helm-version instead. Set to %s\x1b[0m")
                  opt["--helm-version"] = helm_version
 
-            if self._context.opt['--create-default-helm']:
+            if opt['--create-default-helm']:
                  LOG.warning("\x1b[31;1mWARN : Option --create-default-helm is DEPRECATED and is replaced by --use-chart=legacy\x1b[0m")
                  opt["--use-chart"] = "legacy"
 
-            if self._context.opt['--docker-version']:
-                 LOG.warning("\x1b[31;1mWARN : Option --docker-version is DEPRECATED and is replaced by --docker-image-maven=maven:%s\x1b[0m" % self._context.opt['--docker-version'])
-                 opt["--docker-image-maven"] = "maven:%s" % self._context.opt['--docker-version']
+            if opt['--docker-version']:
+                 LOG.warning("\x1b[31;1mWARN : Option --docker-version is DEPRECATED and is replaced by --docker-image-maven=maven:%s\x1b[0m" % opt['--docker-version'])
+                 opt["--docker-image-maven"] = "maven:%s" % opt['--docker-version']
 
-            if (not self._context.opt['--namespace-project-name'] and not self._context.opt['--namespace-name']):
+            if (not opt['--namespace-project-name'] and opt['--namespace-name']):
                 opt["--namespace-project-name"] = True                      
 
 
@@ -700,7 +703,7 @@ class CLIDriver(object):
             docker_build_command = 'build -t %s -f %s %s' % (image_tag, full_dockerfile_path, context)
             if self._context.opt['--docker-build-target']:
               docker_build_command = '%s --target %s' % (docker_build_command, self._context.opt['--docker-build-target'])
-            if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and (self._context.opt['--use-custom-registry'] or self._context.opt['--use-registry'] == 'artifactory' or self._context.opt['--use-registry'] == 'custom'):
+            if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and self._context.opt['--use-registry'] == 'artifactory':
               docker_build_command = '%s --label com.jfrog.artifactory.retention.maxCount="%s"' % (docker_build_command, os.environ['CDP_ARTIFACTORY_TAG_RETENTION'])
 
             if self._context.opt['--build-arg']:
