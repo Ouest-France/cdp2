@@ -549,6 +549,10 @@ services:
         os.environ['CDP_CUSTOM_REGISTRY_TOKEN'] = TestCliDriver.cdp_custom_registry_token
         os.environ['CDP_CUSTOM_REGISTRY_READ_ONLY_TOKEN'] = TestCliDriver.cdp_custom_registry_read_only_token
         os.environ['CDP_CUSTOM_REGISTRY'] = TestCliDriver.cdp_custom_registry
+        os.environ['CDP_ARTIFACTORY_REGISTRY_USER'] = TestCliDriver.cdp_custom_registry_user
+        os.environ['CDP_ARTIFACTORY_REGISTRY_TOKEN'] = TestCliDriver.cdp_custom_registry_token
+        os.environ['CDP_ARTIFACTORY_REGISTRY_READ_ONLY_TOKEN'] = TestCliDriver.cdp_custom_registry_read_only_token
+        os.environ['CDP_ARTIFACTORY_REGISTRY'] = TestCliDriver.cdp_custom_registry
         os.environ['CDP_HARBOR_REGISTRY_READ_ONLY_USER'] = TestCliDriver.cdp_harbor_registry_user
         os.environ['CDP_HARBOR_REGISTRY_USER'] = TestCliDriver.cdp_harbor_registry_user
         os.environ['CDP_HARBOR_REGISTRY_TOKEN'] = TestCliDriver.cdp_harbor_registry_token
