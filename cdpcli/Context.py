@@ -17,8 +17,6 @@ class Context(object):
         self.auths = {}
         self.auths["auths"] = {}
 
-        print(opt)
-
         if opt['--put'] or opt['--delete']:
             self._registry = os.environ['CI_REGISTRY']
 
