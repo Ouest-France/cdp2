@@ -3,9 +3,6 @@
 """
 Universal Command Line Environment for Continuous Delivery Pipeline on Gitlab-CI.
 Usage:
-    cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--command=<cmd>) [--simulate-merge-on=<branch_name>]
-        [--docker-image=<image_name>]  [--docker-image-git=<image_name_git>] [--volume-from=<host_type>]         
     cdp maven [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--goals=<goals-opts>|--deploy=<type>) [--simulate-merge-on=<branch_name>]
         [--maven-release-plugin=<version>]
@@ -63,7 +60,6 @@ Options:
     --build-arg=<arg>                                          Build args for docker
     --build-context=<path>                                     Specify the docker building context [default: .].
     --build-file=<buildFile>                                   Specify the file to build multiples images [default: cdp-build-file.yml].
-    --command=<cmd>                                            Command to run in the docker image.
     --chart-repo=<repo>                                        Path of the repository of default charts
     --use-chart=<chart:branch>                                 Name of the pre-defined chart to use. Format : name or name:branch
     --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
@@ -75,19 +71,11 @@ Options:
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
-    --docker-image-aws=<image_name_aws>                        Docker image which execute git command [DEPRECATED].
-    --docker-image-git=<image_name_git>                        Docker image which execute git command [DEPRECATED].
-    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [DEPRECATED].
-    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [DEPRECATED].
     --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
-    --docker-image-conftest=<image_name_conftest>              Docker image which execute conftest command [DEPRECATED].
-    --docker-image=<image_name>                                Specify docker image name for build project [DEPRECATED].
     --docker-build-target=<target_name>                        Specify target in multi stage build
-    --docker-version=<version>                                 Specify maven docker version. [DEPRECATED].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --helm-version=<version>                                   Major version of Helm. [default: 3]
     --helm-migration=<true|false>                              Do helm 2 to Helm 3 migration
-    --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout [DEPRECATED]
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
@@ -97,7 +85,6 @@ Options:
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
-    --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [DEPRECATED].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
     --namespace-name=<namespace_name>                          Use namespace_name to create k8s namespace.
     --no-conftest                                              Do not run conftest validation tests.
@@ -112,16 +99,26 @@ Options:
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
-    --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace [DEPRECATED]
-    --use-aws-ecr                                              Use AWS ECR from k8s configuration for pull/push docker image. [DEPRECATED]
-    --use-custom-registry                                      Use custom registry for pull/push docker image. [DEPRECATED]. Replaced by use-registry=artifactory
     --use-docker                                               Use docker to build / push image [default].
-    --use-docker-compose                                       Use docker-compose to build / push image / retag container [DEPRECATED]
-    --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default]. [DEPRECATED]
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
     --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
-    --volume-from=<host_type>                                  Volume type of sources - docker, k8s, local or docker volume description (dir:mount) [default: k8s]
+Deprecated options:
+    --docker-image-aws=<image_name_aws>                        Docker image which execute git command [DEPRECATED].
+    --docker-image-git=<image_name_git>                        Docker image which execute git command [DEPRECATED].
+    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [DEPRECATED].
+    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [DEPRECATED].
+    --docker-image-conftest=<image_name_conftest>              Docker image which execute conftest command [DEPRECATED].
+    --docker-image=<image_name>                                Specify docker image name for build project [DEPRECATED].
+    --docker-version=<version>                                 Specify maven docker version. [DEPRECATED].
+    --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout [DEPRECATED]
+    --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [DEPRECATED].
+    --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace [DEPRECATED]
+    --use-aws-ecr                                              Use AWS ECR from k8s configuration for pull/push docker image. [DEPRECATED]
+    --use-custom-registry                                      Use custom registry for pull/push docker image. [DEPRECATED]. Replaced by use-registry=artifactory
+    --use-docker-compose                                       Use docker-compose to build / push image / retag container [DEPRECATED]
+    --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default]. [DEPRECATED]
+    --volume-from=<host_type>                                  Volume type of sources - docker, k8s, local or docker volume description (dir:mount) [DEPRECATED] 
 """
 import base64
 import configparser
@@ -157,6 +154,8 @@ yaml.preserve_quotes = True
 yaml.explicit_start = True
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "build":
+        sys.exit("build command is deprecated")
 
     opt = docopt(__doc__, sys.argv[1:], version=__version__)
 
@@ -192,7 +191,7 @@ class CLIDriver(object):
             self._context = Context(opt, cmd)
             LOG.verbose('Context : %s', self._context.__dict__)
 
-            deprecated = {'docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-conftest','docker-image','use-docker-compose','namespace-project-branch-name'}
+            deprecated = {'docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-conftest','docker-image','use-docker-compose','namespace-project-branch-name',"volume-from"}
             for option in deprecated:
                if (self._context.getParamOrEnv(option)):
                  LOG.warning("\x1b[31;1mWARN : Option %s is DEPRECATED and will not be used\x1b[0m",option)
@@ -217,9 +216,6 @@ class CLIDriver(object):
 
     def main(self, args=None):
         try:
-            if self._context.opt['build']:
-                self.__build()
-
             if self._context.opt['maven']:
                 self.check_runner_permissions("maven")
                 self.__maven()
@@ -248,9 +244,6 @@ class CLIDriver(object):
             if sleep is not None and sleep != "0":
                 self._cmd.run_command('sleep %s' % sleep)
 
-
-    def __build(self):
-        raise ValueError("build command is no longer supported")
 
     def __maven(self):
         force_git_config = False
@@ -290,7 +283,7 @@ class CLIDriver(object):
 
     def __docker(self):
         if self._context.opt['--use-aws-ecr'] or self._context.opt['--use-registry'] == 'aws-ecr':
-            aws_cmd = AwsCommand(self._cmd, '', None, True)
+            aws_cmd = AwsCommand(self._cmd, '', True)
 
             repos = []
 
@@ -341,7 +334,7 @@ class CLIDriver(object):
             self.__callArtifactoryFile(self._context.opt['--image-tag'], upload_file, http_verb)
 
     def __k8s(self):
-        kubectl_cmd = KubectlCommand(self._cmd, '', self._context.opt['--volume-from'], True)
+        kubectl_cmd = KubectlCommand(self._cmd, '', True)
         helm_migration = True if self._context.getParamOrEnv("helm-migration") == "true" else False
         
         if self._context.opt['--image-tag-latest']:
@@ -398,7 +391,7 @@ class CLIDriver(object):
            # migration effectuee ou non nécessaire, on force la version de Helm à 3 
            self._context.opt["--helm-version"] = '3' 
 
-        helm_cmd = HelmCommand(self._cmd, self._context.getParamOrEnv("helm-version"), self._context.opt['--volume-from'], True)
+        helm_cmd = HelmCommand(self._cmd, self._context.getParamOrEnv("helm-version"), True)
         chart_placeholders = ['<project.name>','<helm.version>']
         chart_replacement = [os.environ['CI_PROJECT_NAME'], "v1" if self.isHelm2() else "v2"]
 
@@ -687,7 +680,7 @@ class CLIDriver(object):
       return prefixTag
         
     def __buildTagAndPushOnDockerRegistry(self, tag):
-        docker_cmd = DockerCommand(self._cmd, '', self._context.opt['--volume-from'], True)
+        docker_cmd = DockerCommand(self._cmd, '', True)
         image_tag = self.__getImageTag(self.__getImageName(), tag)
         if self._context.opt['--use-docker-compose']:
              raise ValueError('docker-compose is deprecated.')
@@ -841,7 +834,7 @@ class CLIDriver(object):
 
     def __simulate_merge_on(self, force_git_config = False):
         if force_git_config or self._context.opt['--simulate-merge-on']:
-            git_cmd = GitCommand(self._cmd, '', self._context.opt['--volume-from'], True)
+            git_cmd = GitCommand(self._cmd, '', True)
 
             git_cmd.run('config user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
             git_cmd.run('config user.name \"%s\"' % os.environ['GITLAB_USER_NAME'])
@@ -939,7 +932,7 @@ class CLIDriver(object):
             LOG.info('conftest : No policy found in %s - pass' % chartdir)
             return
 
-        conftest_cmd = ConftestCommand(self._cmd,'', self._context.opt['--volume-from'], True)
+        conftest_cmd = ConftestCommand(self._cmd,'', True)
         cmd = "test --policy policy"
         if (os.path.isdir("%s/data" % chartdir)):
            cmd = "%s --data data" % cmd

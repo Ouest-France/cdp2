@@ -8,10 +8,9 @@ LOG.setLevel(logging.INFO)
 
 class KubectlCommand(object):
 
-    def __init__(self, cmd, version, volume_from = None, with_entrypoint = False):
+    def __init__(self, cmd, version, with_entrypoint = False):
         self._cmd = cmd
         self._version = version
-        self._volume_from = volume_from
         self._with_entrypoint = with_entrypoint
 
     def run(self, prg_cmd, dry_run = None, timeout = None, workingDir = True):

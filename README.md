@@ -8,9 +8,6 @@
 ```python
 Universal Command Line Environment for Continuous Delivery Pipeline on Gitlab-CI.
 Usage:
-    cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--command=<cmd>) [--simulate-merge-on=<branch_name>]
-        [--docker-image=<image_name>]  [--docker-image-git=<image_name_git>] [--volume-from=<host_type>]         
     cdp maven [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--goals=<goals-opts>|--deploy=<type>) [--simulate-merge-on=<branch_name>]
         [--maven-release-plugin=<version>]
@@ -41,7 +38,7 @@ Usage:
         [--build-file=<buildFile>]
         [--values=<files>]
         [--delete-labels=<minutes>]
-        [--namespace-project-name | --namespace-name=<namespace_name>] [--namespace-project-branch-name]
+        [--namespace-project-name | --namespace-name=<namespace_name> ] [--namespace-project-branch-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--helm-migration=[true|false]]
         [--chart-repo=<repo>] [--use-chart=<chart:branch>]
@@ -68,7 +65,6 @@ Options:
     --build-arg=<arg>                                          Build args for docker
     --build-context=<path>                                     Specify the docker building context [default: .].
     --build-file=<buildFile>                                   Specify the file to build multiples images [default: cdp-build-file.yml].
-    --command=<cmd>                                            Command to run in the docker image.
     --chart-repo=<repo>                                        Path of the repository of default charts
     --use-chart=<chart:branch>                                 Name of the pre-defined chart to use. Format : name or name:branch
     --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
@@ -80,19 +76,11 @@ Options:
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
-    --docker-image-aws=<image_name_aws>                        Docker image which execute git command [DEPRECATED].
-    --docker-image-git=<image_name_git>                        Docker image which execute git command [DEPRECATED].
-    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [DEPRECATED].
-    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [DEPRECATED].
-    --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [DEPRECATED].
-    --docker-image-conftest=<image_name_conftest>              Docker image which execute conftest command [DEPRECATED].
-    --docker-image=<image_name>                                Specify docker image name for build project [DEPRECATED].
+    --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
     --docker-build-target=<target_name>                        Specify target in multi stage build
-    --docker-version=<version>                                 Specify maven docker version. [DEPRECATED].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --helm-version=<version>                                   Major version of Helm. [default: 3]
     --helm-migration=<true|false>                              Do helm 2 to Helm 3 migration
-    --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout [DEPRECATED]
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
@@ -102,14 +90,13 @@ Options:
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
-    --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [DEPRECATED].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
-    --namespace-name=<namespace_name>                          Use <namespace name> to create k8s namespace.
+    --namespace-name=<namespace_name>                          Use namespace_name to create k8s namespace.
     --no-conftest                                              Do not run conftest validation tests.
     --path=<path>                                              Path to validate [default: configurations].
     --put=<file>                                               Put file to artifactory.
     --release-custom-name=<release_name>                       Customize release name with namespace-name-<release_name>
-    --release-namespace-name                                   Force the release to be created with the namespace name. Same as  to --release-project-name if --namespace-name is not set. [default]
+    --release-namespace-name                                   Force the release to be created with the namespace name. Same as --release-project-name if namespace-name option is not set. [default]
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
     --release-shortproject-name                                Force the release to be created with the shortname (first letters of word + id) of the Gitlab project
@@ -117,16 +104,26 @@ Options:
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
-    --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace [DEPRECATED]
-    --use-aws-ecr                                              DEPRECATED - Use AWS ECR from k8s configuration for pull/push docker image.
-    --use-custom-registry                                      DEPRECATED - Use custom registry for pull/push docker image.
     --use-docker                                               Use docker to build / push image [default].
-    --use-docker-compose                                       Use docker-compose to build / push image / retag container [DEPRECATED]
-    --use-gitlab-registry                                      DEPRECATED - Use gitlab registry for pull/push docker image [default].
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
     --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
-    --volume-from=<host_type>                                  Volume type of sources - docker, k8s, local or docker volume description (dir:mount) [default: k8s]
+Deprecated options:
+    --docker-image-aws=<image_name_aws>                        Docker image which execute git command [DEPRECATED].
+    --docker-image-git=<image_name_git>                        Docker image which execute git command [DEPRECATED].
+    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [DEPRECATED].
+    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [DEPRECATED].
+    --docker-image-conftest=<image_name_conftest>              Docker image which execute conftest command [DEPRECATED].
+    --docker-image=<image_name>                                Specify docker image name for build project [DEPRECATED].
+    --docker-version=<version>                                 Specify maven docker version. [DEPRECATED].
+    --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout [DEPRECATED]
+    --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [DEPRECATED].
+    --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace [DEPRECATED]
+    --use-aws-ecr                                              Use AWS ECR from k8s configuration for pull/push docker image. [DEPRECATED]
+    --use-custom-registry                                      Use custom registry for pull/push docker image. [DEPRECATED]. Replaced by use-registry=artifactory
+    --use-docker-compose                                       Use docker-compose to build / push image / retag container [DEPRECATED]
+    --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default]. [DEPRECATED]
+    --volume-from=<host_type>                                  Volume type of sources - docker, k8s, local or docker volume description (dir:mount) [DEPRECATED] 
 ```
 ### _Prerequisites_
 
