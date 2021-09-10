@@ -582,7 +582,12 @@ class CLIDriver(object):
         self.__runConftest(os.path.abspath(conftest_temp_dir), 'all_resources.yaml'.split(','))
 
         # Install or Upgrade environnement
-        helm_cmd.run(command)
+        try:
+          helm_cmd.run(command)
+        except OSError as e: 
+          # Recuperation des events pour debuggage
+          kubectl_cmd.run('get events --sort-by=.metadata.creationTimestamp --field-selector=type!=Normal|grep 10')
+          raise e
 
         # Tout s'est bien passé, on clean la release ou le namespace si dernière release
         if cleanupHelm2:
