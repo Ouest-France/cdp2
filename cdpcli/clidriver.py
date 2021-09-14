@@ -23,7 +23,7 @@ Usage:
         (--put=<file> | --delete=<file>)
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
+        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name> | --use-full-image-path=<registry/repository/image:tag>)
         [--helm-version=<version>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1 | --image-tag=<tag>] 
         [--image-prefix-tag=<tag>]
@@ -101,6 +101,7 @@ Options:
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
     --use-docker                                               Use docker to build / push image [default].
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
+    --use-full-image-path=<registry/repository/image:tag>      Use full image path overriding path calculated by CDP
     --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
 Deprecated options:
@@ -456,15 +457,18 @@ class CLIDriver(object):
         set_command = '%s --set ingress.host=%s' % (set_command, host)
         set_command = '%s --set ingress.subdomain=%s' % (set_command, os.getenv('CDP_DNS_SUBDOMAIN', None))
         set_command = '%s --set image.commit.sha=sha-%s' % (set_command, os.environ['CI_COMMIT_SHA'][:8])
-        set_command = '%s --set image.registry=%s' % (set_command,  self._context.registry)
-        set_command = '%s --set image.repository=%s' % (set_command, self._context.registryRepositoryName)
-        set_command = '%s --set image.tag=%s' % (set_command, tag)
+        if (self._context.opt['--use-full-image-path']):
+          set_command = '%s --set image.fullImagePath=%s' % (set_command,self._context.opt['--use-full-image-path'] )
+        else:
+           set_command = '%s --set image.registry=%s' % (set_command,  self._context.registry)
+           set_command = '%s --set image.repository=%s' % (set_command, self._context.registryRepositoryName)
+           set_command = '%s --set image.tag=%s' % (set_command, tag)
         set_command = '%s --set image.pullPolicy=%s' % (set_command, pullPolicy)
         tlsSecretName = self._context.getParamOrEnv("ingress-tlsSecretName")
         if (tlsSecretName):
             set_command = '%s --set ingress.tlsSecretName=%s' % (set_command, tlsSecretName)
         # Need to add secret file for docker registry
-        if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr':
+        if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and not self._context.opt['--use-full-image-path']:
             # Add secret (Only if secret is not exist )
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
             set_command = '%s --set image.credentials.username=%s' % (set_command, self._context.registry_user_ro)
