@@ -5,17 +5,22 @@ import os
 import re
 import json
 import base64
-
 from .awscommand import AwsCommand
 
 class Context(object):
 
-    def __init__(self, opt, cmd):
+    def __init__(self, opt, cmd, LOG):
         self._opt = opt
         self._cmd = cmd
         self._registry = None
         self.auths = {}
         self.auths["auths"] = {}
+
+        registries = [["--use-custom-registry","artifactory"],["--use-gitlab-registry","gitlab"],["--use-aws-ecr","aws-ecr"]]
+        for registry in registries:
+            if opt[registry[0]] :
+                LOG.warning("\x1b[31;1mWARN : Option %s is DEPRECATED. Use --use-registry=%s instead. Set to %s\x1b[0m",registry[0],registry[1],registry[1] )
+                opt["--use-registry"] = registry[1]
 
         if opt['--put'] or opt['--delete']:
             self._registry = os.environ['CI_REGISTRY']
@@ -34,9 +39,9 @@ class Context(object):
                              os.getenv('CDP_%s_REGISTRY_USER' % opt['--login-registry'].upper(), None),
                              os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--login-registry'].upper(), None))
 
-        if opt['--use-aws-ecr'] or opt['--use-gitlab-registry'] or opt['--use-registry'] != 'none':
+        if opt['--use-registry'] != 'none':
             if opt['maven'] or opt['docker'] or opt['k8s']:
-                if opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr' :
+                if opt['--use-registry'] == 'aws-ecr' :
                     ### Get login from AWS-CLI
                     aws_cmd = AwsCommand(cmd, "", True)
                     login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', aws_cmd.run('ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', dry_run=False)[0].strip())
@@ -46,7 +51,7 @@ class Context(object):
                     # Login AWS registry
                     self.__login(self._registry, self._registry_user_ro,self._registry_token_ro)
 
-                elif opt['--use-gitlab-registry'] or opt['--use-registry'] == 'gitlab' :
+                elif opt['--use-registry'] == 'gitlab' :
                     # Use gitlab registry
                     self.__set_registry(os.getenv('CI_REGISTRY', None),
                                         os.getenv('CI_DEPLOY_USER', None),

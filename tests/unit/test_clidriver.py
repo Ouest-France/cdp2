@@ -1301,7 +1301,7 @@ services:
                         final_deploy_spec_dir,
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
             ]
-            self.__run_CLIDriver({ 'k8s', '--use-full-image-path=ouestfrance/cdp:latest', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--full-image-path=ouestfrance/cdp:latest', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
                 env_vars = {'CDP_INGRESS_TLSSECRETNAME': TestCliDriver.ingress_tlsSecretName, 'CI_RUNNER_TAGS': 'test, staging', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
