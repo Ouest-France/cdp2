@@ -134,7 +134,7 @@ import shutil
 from .Context import Context
 from .clicommand import CLICommand
 from cdpcli import __version__
-from .dockercommand import DockerCommand
+from .imgcommand import ImgCommand
 from .mavencommand import MavenCommand
 from .gitcommand import GitCommand
 from .awscommand import AwsCommand
@@ -689,7 +689,7 @@ class CLIDriver(object):
       return prefixTag
         
     def __buildTagAndPushOnDockerRegistry(self, tag):
-        docker_cmd = DockerCommand(self._cmd, '', True)
+        img_cmd = ImgCommand(self._cmd)
         image_tag = self.__getImageTag(self.__getImageName(), tag)
         if self._context.opt['--use-docker-compose']:
              raise ValueError('docker-compose is deprecated.')
@@ -715,9 +715,9 @@ class CLIDriver(object):
                 for buildarg in self._context.opt['--build-arg']:
                     docker_build_command = '%s --build-arg %s' % (docker_build_command, buildarg)
 
-            docker_cmd.run(docker_build_command)
+            img_cmd.run(docker_build_command)
             # Push docker image
-            docker_cmd.run('push %s' % (image_tag))
+            img_cmd.run('push %s' % (image_tag))
             
     def __conftest(self):
         dir = self._context.opt['--deploy-spec-dir']
