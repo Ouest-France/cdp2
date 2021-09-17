@@ -11,7 +11,7 @@ Usage:
         [--login-registry=<registry_name>]
         [--docker-image-maven=<image_name_maven>|--docker-version=<version>] [--docker-image-git=<image_name_git>] [--volume-from=<host_type>]
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
+        [--use-gitlab-registry] [--use-aws-ecr] [--use-custom-registry] [--use-registry=<registry_name>]
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
         [--build-context=<path>]
@@ -23,9 +23,9 @@ Usage:
         (--put=<file> | --delete=<file>)
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
+        [--use-gitlab-registry] [--use-aws-ecr] [--use-custom-registry] [--use-registry=<registry_name>] 
         [--helm-version=<version>]
-        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1 | --image-tag=<tag>] 
+        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>] [--full-image-path=<registry/repository/image:tag>]
         [--image-prefix-tag=<tag>]
         [(--create-gitlab-secret)]
         [(--create-gitlab-secret-hook)]
@@ -39,7 +39,7 @@ Usage:
         [--chart-repo=<repo>] [--use-chart=<chart:branch>]
         [--timeout=<timeout>]
         [--tiller-namespace]
-        [--release-project-branch-name | --release-project-env-name | --release-project-name | --release-shortproject-name | --release-namespace-name | --release-custom-name=<release_name>]
+        [--release-project-branch-name] [--release-project-env-name] [--release-project-name] [--release-shortproject-name] [--release-namespace-name] [--release-custom-name=<release_name>]
         [--image-pull-secret] [--ingress-tlsSecretName=<secretName>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
@@ -101,6 +101,7 @@ Options:
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
     --use-docker                                               Use docker to build / push image [default].
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
+    --full-image-path=<registry/repository/image:tag>          Use full image path overriding path calculated by CDP
     --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
 Deprecated options:
@@ -133,7 +134,7 @@ import shutil
 from .Context import Context
 from .clicommand import CLICommand
 from cdpcli import __version__
-from .dockercommand import DockerCommand
+from .imgcommand import ImgCommand
 from .mavencommand import MavenCommand
 from .gitcommand import GitCommand
 from .awscommand import AwsCommand
@@ -183,12 +184,7 @@ class CLIDriver(object):
         if opt is None:
             raise ValueError('TODO')
         else:
-
-            if opt["--use-custom-registry"] :
-                 LOG.warning("\x1b[31;1mWARN : Option use-custom-registry is DEPRECATED. Use --use-registry=custom instead. Set to %s\x1b[0m")
-                 opt["--use-registry"] = "artifactory"
-
-            self._context = Context(opt, cmd)
+            self._context = Context(opt, cmd, LOG)
             LOG.verbose('Context : %s', self._context.__dict__)
 
             deprecated = {'docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-conftest','docker-image','use-docker-compose','namespace-project-branch-name',"volume-from"}
@@ -215,6 +211,9 @@ class CLIDriver(object):
 
 
     def main(self, args=None):
+        exclusiveReleaseOptions = ["--release-project-branch-name","--release-project-env-name","--release-project-name","--release-shortproject-name","--release-namespace-name","--release-custom-name"]            
+        exclusiveRegistryOptions = ["--use-gitlab-registry","--use-aws-ecr","--use-custom-registry","--use-registry"]
+        exclusiveTagsOptions = ["--image-tag-branch-name","--image-tag-latest","--image-tag-sha1","--image-tag","--full-image-path"]
         try:
             if self._context.opt['maven']:
                 self.check_runner_permissions("maven")
@@ -230,6 +229,8 @@ class CLIDriver(object):
 
             if self._context.opt['k8s']:
                 self.check_runner_permissions("k8s")
+                self.check_mutually_exclusives_options(self._context.opt, exclusiveReleaseOptions, 0)
+                self.check_mutually_exclusives_options(self._context.opt, exclusiveTagsOptions, 0)
                 self.__k8s()
 
             if self._context.opt['conftest']:
@@ -282,7 +283,7 @@ class CLIDriver(object):
         maven_cmd.run(command)
 
     def __docker(self):
-        if self._context.opt['--use-aws-ecr'] or self._context.opt['--use-registry'] == 'aws-ecr':
+        if self._context.opt['--use-registry'] == 'aws-ecr':
             aws_cmd = AwsCommand(self._cmd, '', True)
 
             repos = []
@@ -456,15 +457,18 @@ class CLIDriver(object):
         set_command = '%s --set ingress.host=%s' % (set_command, host)
         set_command = '%s --set ingress.subdomain=%s' % (set_command, os.getenv('CDP_DNS_SUBDOMAIN', None))
         set_command = '%s --set image.commit.sha=sha-%s' % (set_command, os.environ['CI_COMMIT_SHA'][:8])
-        set_command = '%s --set image.registry=%s' % (set_command,  self._context.registry)
-        set_command = '%s --set image.repository=%s' % (set_command, self._context.registryRepositoryName)
-        set_command = '%s --set image.tag=%s' % (set_command, tag)
+        if (self._context.opt['--full-image-path']):
+          set_command = '%s --set image.fullImagePath=%s' % (set_command,self._context.opt['--full-image-path'] )
+        else:
+           set_command = '%s --set image.registry=%s' % (set_command,  self._context.registry)
+           set_command = '%s --set image.repository=%s' % (set_command, self._context.registryRepositoryName)
+           set_command = '%s --set image.tag=%s' % (set_command, tag)
         set_command = '%s --set image.pullPolicy=%s' % (set_command, pullPolicy)
         tlsSecretName = self._context.getParamOrEnv("ingress-tlsSecretName")
         if (tlsSecretName):
             set_command = '%s --set ingress.tlsSecretName=%s' % (set_command, tlsSecretName)
         # Need to add secret file for docker registry
-        if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr':
+        if not self._context.opt['--use-registry'] == 'aws-ecr' and not self._context.opt['--use-registry'] == 'none':
             # Add secret (Only if secret is not exist )
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
             set_command = '%s --set image.credentials.username=%s' % (set_command, self._context.registry_user_ro)
@@ -556,7 +560,7 @@ class CLIDriver(object):
                             doc = CLIDriver.addMonitoringLabel(doc, False)
                         else:
                             doc = CLIDriver.addMonitoringLabel(doc, True)
-                    if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
+                    if not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
                         doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
                     
                     LOG.verbose(doc)
@@ -582,7 +586,12 @@ class CLIDriver(object):
         self.__runConftest(os.path.abspath(conftest_temp_dir), 'all_resources.yaml'.split(','))
 
         # Install or Upgrade environnement
-        helm_cmd.run(command)
+        try:
+          helm_cmd.run(command)
+        except OSError as e: 
+          # Recuperation des events pour debuggage
+          kubectl_cmd.run('get events --sort-by=.metadata.creationTimestamp --field-selector=type!=Normal|grep 10')
+          raise e
 
         # Tout s'est bien passé, on clean la release ou le namespace si dernière release
         if cleanupHelm2:
@@ -680,7 +689,7 @@ class CLIDriver(object):
       return prefixTag
         
     def __buildTagAndPushOnDockerRegistry(self, tag):
-        docker_cmd = DockerCommand(self._cmd, '', True)
+        img_cmd = ImgCommand(self._cmd)
         image_tag = self.__getImageTag(self.__getImageName(), tag)
         if self._context.opt['--use-docker-compose']:
              raise ValueError('docker-compose is deprecated.')
@@ -706,9 +715,9 @@ class CLIDriver(object):
                 for buildarg in self._context.opt['--build-arg']:
                     docker_build_command = '%s --build-arg %s' % (docker_build_command, buildarg)
 
-            docker_cmd.run(docker_build_command)
+            img_cmd.run(docker_build_command)
             # Push docker image
-            docker_cmd.run('push %s' % (image_tag))
+            img_cmd.run('push %s' % (image_tag))
             
     def __conftest(self):
         dir = self._context.opt['--deploy-spec-dir']
@@ -988,3 +997,15 @@ class CLIDriver(object):
         cmds = os.getenv("CDP_ALLOWED_CMD","maven,docker,k8s,artifactory,conftest").split(",")
         if not commande in cmds:
            LOG.warning("\x1b[31;1mWARN : Command cdp %s is not allowed in this environnement. Please change the runner tag\x1b[0m" % commande)
+
+    def check_mutually_exclusives_options(self, opt, options, minOccurrences=0):
+            nbExclusiveOptions = 0
+            for exclusiveOption in options:
+                if opt[exclusiveOption]:
+                    nbExclusiveOptions = nbExclusiveOptions +1
+
+            if nbExclusiveOptions > 1:
+               sys.exit("Options %s are mutually exclusives" % ",".join(options))
+
+            if nbExclusiveOptions < minOccurrences:
+               sys.exit("%s of %s is required (%s/%s)" % (minOccurrences, ",".join(options),minOccurrences,nbExclusiveOptions))

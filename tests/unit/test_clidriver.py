@@ -64,7 +64,7 @@ class FakeCommand(object):
                TestCliDriver.image_name_helm3 : "helm3 %s",
                TestCliDriver.image_name_helm2 : "helm2 %s",
                TestCliDriver.image_name_kubectl : "kubectl %s",
-               TestCliDriver.image_name_docker : "docker %s",
+               TestCliDriver.image_name_docker : "img %s",
                TestCliDriver.image_name_maven : self.__get_maven_cmd(self._verif_cmd[self._index].get('docker_image'), "%s") ,
                TestCliDriver.image_name_aws : "aws %s",
                TestCliDriver.image_name_conftest : 'cd %s && conftest' % ('${PWD}' if workingDir_from_assert is True else workingDir_from_assert) + " %s"
@@ -673,8 +673,8 @@ services:
             {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
             {'cmd': self.__getLoginString(TestCliDriver.ci_registry,TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'docker build -t %s:%s -f ./Dockerfile .' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
-            {'cmd': 'docker push %s:%s' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
+            {'cmd': 'img build -t %s:%s -f ./Dockerfile .' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
+            {'cmd': 'img push %s:%s' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-gitlab-registry', '--login-registry=harbor', '--sleep=%s' % sleep },
             verif_cmd, docker_host = docker_host, env_vars = {'DOCKER_HOST': docker_host, 'CI_REGISTRY': TestCliDriver.ci_registry})
@@ -689,8 +689,8 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'docker build -t %s/%s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name,TestCliDriver.ci_project_name,TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
-            {'cmd': 'docker push %s/%s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name,TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            
+            {'cmd': 'img build -t %s/%s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name,TestCliDriver.ci_project_name,TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
+            {'cmd': 'img push %s/%s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name,TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--sleep=%s' % sleep },
@@ -708,11 +708,11 @@ services:
           verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./distribution/php7-fpm/Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'docker build -t %s:%s -f %s %s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/php",  TestCliDriver.ci_commit_ref_slug,"./distribution/php7-fpm/Dockerfile","./distribution/php7-fpm"), 'output': 'unnecessary'},
-            {'cmd': 'docker push %s:%s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/php",  TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            
+            {'cmd': 'img build -t %s:%s -f %s %s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/php",  TestCliDriver.ci_commit_ref_slug,"./distribution/php7-fpm/Dockerfile","./distribution/php7-fpm"), 'output': 'unnecessary'},
+            {'cmd': 'img push %s:%s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/php",  TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            
             {'cmd': 'hadolint ./distribution/nginx/Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'docker build -t %s:%s -f %s %s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/nginx",  TestCliDriver.ci_commit_ref_slug,"./distribution/nginx/Dockerfile","./distribution/nginx"), 'output': 'unnecessary'},
-            {'cmd': 'docker push %s:%s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/nginx",  TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'}
+            {'cmd': 'img build -t %s:%s -f %s %s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/nginx",  TestCliDriver.ci_commit_ref_slug,"./distribution/nginx/Dockerfile","./distribution/nginx"), 'output': 'unnecessary'},
+            {'cmd': 'img push %s:%s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/nginx",  TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'}
           ]
           self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor',"--build-file=cdp-build-file.yml"}, verif_cmd)
 
@@ -723,8 +723,8 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString( TestCliDriver.cdp_custom_registry, TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'docker build -t %s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
-            {'cmd': 'docker push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
+            {'cmd': 'img build -t %s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'img push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1' }, verif_cmd)
 
@@ -734,8 +734,8 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString( TestCliDriver.cdp_custom_registry, TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'docker build -t %s/%s:%s -f ./Dockerfile . --build-arg %s --build-arg %s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha,"param1=value1","param2=value2"), 'output': 'unnecessary'},
-            {'cmd': 'docker push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
+            {'cmd': 'img build -t %s/%s:%s -f ./Dockerfile . --build-arg %s --build-arg %s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha,"param1=value1","param2=value2"), 'output': 'unnecessary'},
+            {'cmd': 'img push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1', '--build-arg=param1=value1', '--build-arg=param2=value2' }, verif_cmd)
 
@@ -745,8 +745,8 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'docker build -t %s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name, "test"), 'output': 'unnecessary'},
-            {'cmd': 'docker push %s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name, "test"), 'output': 'unnecessary'}
+            {'cmd': 'img build -t %s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name, "test"), 'output': 'unnecessary'},
+            {'cmd': 'img push %s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name, "test"), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--image-tag=test' }, verif_cmd)
 
@@ -756,8 +756,8 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_custom_registry,TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'docker build -t %s/%s/cdp:%s -f ./Dockerfile . --target cdp' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
-            {'cmd': 'docker push %s/%s/cdp:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}        ]
+            {'cmd': 'img build -t %s/%s/cdp:%s -f ./Dockerfile . --target cdp' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'img push %s/%s/cdp:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}        ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1','--docker-build-target=cdp'}, verif_cmd)
 
     def test_docker_imagetagsha1_useawsecr(self):
@@ -770,8 +770,8 @@ services:
             {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
             {'cmd': 'ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'docker build -t %s/%s:%s -f ./Dockerfile .' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
-            {'cmd': 'docker push %s/%s:%s' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
+            {'cmd': 'img build -t %s/%s:%s -f ./Dockerfile .' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'img push %s/%s:%s' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-registry=aws-ecr', '--image-tag-sha1' }, verif_cmd, env_vars = {'CDP_ECR_PATH': aws_host})
 
@@ -1251,6 +1251,65 @@ services:
         mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
 
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
+    @patch('cdpcli.clidriver.os.makedirs')
+    @patch("cdpcli.clidriver.shutil.copyfile")
+    @patch("cdpcli.clidriver.yaml.dump_all")
+    @freeze_time("2019-06-25 11:55:27")
+    def test_k8s_usegitlabregistry_namespaceprojectname_with_immagefullpath(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab)
+
+        # Create FakeCommand
+        namespace = TestCliDriver.ci_project_name
+        namespace = namespace.replace('_', '-')[:63]
+        release = namespace[:53]
+        staging_file = 'values.staging.yaml'
+        int_file = 'values.int.yaml'
+        values = ','.join([staging_file, int_file])
+        deploy_spec_dir = 'charts'
+        final_deploy_spec_dir = '%s_final' % deploy_spec_dir
+        date_now = datetime.datetime.utcnow()
+        date_format = '%Y-%m-%dT%H%M%SZ'
+        deleteDuration=240
+        date_delete = (date_now + datetime.timedelta(minutes = deleteDuration))
+        self.fakeauths["auths"] = {}
+
+        m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
+        mock_all_resources_yaml = mock_open()
+        m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
+        with patch("builtins.open", m):
+
+            verif_cmd = [
+                {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullImagePath=ouestfrance/cdp:latest --set image.pullPolicy=Always --set ingress.tlsSecretName=%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
+                        namespace,
+                        release,
+                        TestCliDriver.cdp_dns_subdomain_staging,
+                        TestCliDriver.cdp_dns_subdomain_staging,
+                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ingress_tlsSecretName,
+                        staging_file,
+                        int_file,
+                        namespace,
+                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
+                    % (release,
+                        final_deploy_spec_dir,
+                        namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
+            ]
+            self.__run_CLIDriver({ 'k8s', '--full-image-path=ouestfrance/cdp:latest', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
+                env_vars = {'CDP_INGRESS_TLSSECRETNAME': TestCliDriver.ingress_tlsSecretName, 'CI_RUNNER_TAGS': 'test, staging', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging})
+
+            mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
+            mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
+
+        # GITLAB API check
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
+        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
