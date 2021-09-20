@@ -273,14 +273,17 @@ class CLIDriver(object):
         if os.getenv('MAVEN_OPTS', None) is not None:
             command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
 
-        command = 'mvn %s %s' % (command, '-s %s' % settings)
+        #command = 'mvn %s %s' % (command, '-s %s' % settings)
+        command = 'mvn %s' % (command)
 
-        self.__simulate_merge_on(force_git_config)
+        LOG.warning("\x1b[31;1mWARN : The maven command is obsolete. Run this command instead : %s \x1b[0m",command)
 
-        self._cmd.run_command('cp /cdp/maven/settings.xml %s' % settings)
+        #self.__simulate_merge_on(force_git_config)
 
-        maven_cmd = MavenCommand(self._cmd, self._context.opt['--docker-image-maven'])
-        maven_cmd.run(command)
+        #self._cmd.run_command('cp /cdp/maven/settings.xml %s' % settings)
+
+        #maven_cmd = MavenCommand(self._cmd, self._context.opt['--docker-image-maven'])
+        #maven_cmd.run(command)
 
     def __docker(self):
         if self._context.opt['--use-registry'] == 'aws-ecr':
