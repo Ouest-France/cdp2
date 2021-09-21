@@ -585,7 +585,7 @@ services:
             {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
             {'cmd': self.__getLoginString(TestCliDriver.ci_registry,TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build --storage-driver vfs -t %s:%s -f ./Dockerfile .' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
+            {'cmd': 'podman build -t %s:%s -f ./Dockerfile .' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
             {'cmd': 'podman push %s:%s' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-gitlab-registry', '--login-registry=harbor', '--sleep=%s' % sleep },
@@ -601,7 +601,7 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build --storage-driver vfs -t %s/%s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name,TestCliDriver.ci_project_name,TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
+            {'cmd': 'podman build -t %s/%s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name,TestCliDriver.ci_project_name,TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
             {'cmd': 'podman push %s/%s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name,TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
@@ -620,10 +620,10 @@ services:
           verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./distribution/php7-fpm/Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build --storage-driver vfs -t %s:%s -f %s %s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/php",  TestCliDriver.ci_commit_ref_slug,"./distribution/php7-fpm/Dockerfile","./distribution/php7-fpm"), 'output': 'unnecessary'},
+            {'cmd': 'podman build -t %s:%s -f %s %s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/php",  TestCliDriver.ci_commit_ref_slug,"./distribution/php7-fpm/Dockerfile","./distribution/php7-fpm"), 'output': 'unnecessary'},
             {'cmd': 'podman push %s:%s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/php",  TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            
             {'cmd': 'hadolint ./distribution/nginx/Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build --storage-driver vfs -t %s:%s -f %s %s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/nginx",  TestCliDriver.ci_commit_ref_slug,"./distribution/nginx/Dockerfile","./distribution/nginx"), 'output': 'unnecessary'},
+            {'cmd': 'podman build -t %s:%s -f %s %s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/nginx",  TestCliDriver.ci_commit_ref_slug,"./distribution/nginx/Dockerfile","./distribution/nginx"), 'output': 'unnecessary'},
             {'cmd': 'podman push %s:%s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name + "/nginx",  TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'}
           ]
           self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor',"--build-file=cdp-build-file.yml"}, verif_cmd)
@@ -635,7 +635,7 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString( TestCliDriver.cdp_custom_registry, TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build --storage-driver vfs -t %s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'podman build -t %s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
             {'cmd': 'podman push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1' }, verif_cmd)
@@ -646,7 +646,7 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString( TestCliDriver.cdp_custom_registry, TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build --storage-driver vfs -t %s/%s:%s -f ./Dockerfile . --build-arg %s --build-arg %s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha,"param1=value1","param2=value2"), 'output': 'unnecessary'},
+            {'cmd': 'podman build -t %s/%s:%s -f ./Dockerfile . --build-arg %s --build-arg %s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha,"param1=value1","param2=value2"), 'output': 'unnecessary'},
             {'cmd': 'podman push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1', '--build-arg=param1=value1', '--build-arg=param2=value2' }, verif_cmd)
@@ -657,7 +657,7 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build --storage-driver vfs -t %s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name, "test"), 'output': 'unnecessary'},
+            {'cmd': 'podman build -t %s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name, "test"), 'output': 'unnecessary'},
             {'cmd': 'podman push %s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name, "test"), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--image-tag=test' }, verif_cmd)
@@ -668,7 +668,7 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_custom_registry,TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build --storage-driver vfs -t %s/%s/cdp:%s -f ./Dockerfile . --target cdp' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'podman build -t %s/%s/cdp:%s -f ./Dockerfile . --target cdp' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
             {'cmd': 'podman push %s/%s/cdp:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}        ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1','--docker-build-target=cdp'}, verif_cmd)
 
@@ -682,7 +682,7 @@ services:
             {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
             {'cmd': 'ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build --storage-driver vfs -t %s/%s:%s -f ./Dockerfile .' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'podman build -t %s/%s:%s -f ./Dockerfile .' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
             {'cmd': 'podman push %s/%s:%s' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-registry=aws-ecr', '--image-tag-sha1' }, verif_cmd, env_vars = {'CDP_ECR_PATH': aws_host})
