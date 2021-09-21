@@ -134,7 +134,7 @@ import shutil
 from .Context import Context
 from .clicommand import CLICommand
 from cdpcli import __version__
-from .imgcommand import ImgCommand
+from .podmancommand import PodmanCommand
 from .mavencommand import MavenCommand
 from .gitcommand import GitCommand
 from .awscommand import AwsCommand
@@ -405,7 +405,7 @@ class CLIDriver(object):
             os.makedirs('%s/templates' % self._context.opt['--deploy-spec-dir'],0o777, True)
             # Check that the chart dir no exists
             if os.path.isfile('%s/values.yaml' % self._context.opt['--deploy-spec-dir']):
-                raise ValueError('File %s/values.yaml already exists, while --deploy-spec-dir has been selected.' % self._context.opt['--deploy-spec-dir'])
+               sys.exit('ERROR - Filename %s/values.yaml must not be used when --use-chart is set. Please rename to another name (Ex : values-common.yml)' )
             else:
                 chartIsPresent = False
                 #Download predefined chart in a temporary directory
@@ -692,7 +692,7 @@ class CLIDriver(object):
       return prefixTag
         
     def __buildTagAndPushOnDockerRegistry(self, tag):
-        img_cmd = ImgCommand(self._cmd)
+        img_cmd = PodmanCommand(self._cmd)
         image_tag = self.__getImageTag(self.__getImageName(), tag)
         if self._context.opt['--use-docker-compose']:
              raise ValueError('docker-compose is deprecated.')
@@ -707,7 +707,7 @@ class CLIDriver(object):
             self._cmd.run_command('hadolint %s/%s' % (context, dockerfile), raise_error = False)
 
             # Tag docker image
-            docker_build_command = 'build -t %s -f %s %s' % (image_tag, full_dockerfile_path, context)
+            docker_build_command = 'build --storage-driver vfs -t %s -f %s %s' % (image_tag, full_dockerfile_path, context)
             if self._context.opt['--docker-build-target']:
               docker_build_command = '%s --target %s' % (docker_build_command, self._context.opt['--docker-build-target'])
             if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and self._context.opt['--use-registry'] == 'artifactory':
