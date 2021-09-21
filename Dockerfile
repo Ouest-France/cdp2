@@ -32,9 +32,9 @@ RUN apk -v --no-cache add tar ca-certificates python3  python3-dev  skopeo coreu
     && curl -L https://get.helm.sh/helm-${VERSION_HELM}-linux-amd64.tar.gz | tar zxv -C /tmp/ --strip-components=1 linux-amd64/helm && mv /tmp/helm /bin/helm3 && chmod +x /bin/helm3 \
     && curl -L https://get.helm.sh/helm-${VERSION_HELM2}-linux-amd64.tar.gz | tar zxv -C /tmp/ --strip-components=1 linux-amd64/helm && mv /tmp/helm /bin/helm2 && chmod +x /bin/helm2 \
     && helm3 plugin install https://github.com/helm/helm-2to3 \
-    && rm -f /etc/containers/storage.conf \
     && rm -rf /var/lib/apt/lists/* && rm -rf /var/cache/apk/* /root/.cache /usr/lib/python3.8/site-packages/pip /usr/lib/python3.8/__pycache__ /usr/lib/python3.8/site-packages/awscli/examples /usr/lib/python3.8/site-packages/config-3.8* \
     && rm -rf /cdp/..?* .[!.]*  && mkdir -p /root/.docker 
 
-
+ENV STORAGE_DRIVER=vfs
+ENV STORAGE_OPTS=""
 

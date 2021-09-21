@@ -707,7 +707,7 @@ class CLIDriver(object):
             self._cmd.run_command('hadolint %s/%s' % (context, dockerfile), raise_error = False)
 
             # Tag docker image
-            docker_build_command = 'build --storage-driver vfs -t %s -f %s %s' % (image_tag, full_dockerfile_path, context)
+            docker_build_command = 'build -t %s -f %s %s' % (image_tag, full_dockerfile_path, context)
             if self._context.opt['--docker-build-target']:
               docker_build_command = '%s --target %s' % (docker_build_command, self._context.opt['--docker-build-target'])
             if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and self._context.opt['--use-registry'] == 'artifactory':
