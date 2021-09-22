@@ -276,7 +276,13 @@ class CLIDriver(object):
         #command = 'mvn %s %s' % (command, '-s %s' % settings)
         command = 'mvn %s' % (command)
 
-        LOG.warning("\x1b[31;1mWARN : The maven command is obsolete. Run this command instead : %s \x1b[0m",command)
+        LOG.warning("\x1b[31;1mWARN : The maven command is obsolete. Run theses commands instead \x1b[0m")
+        LOG.warning("\x1b[31;1m           - %s \x1b[0m",command)
+        
+        if self._context.opt['--simulate-merge-on']:
+            LOG.warning("\x1b[31;1m           - %s \x1b[0m",'checkout %s' % self._context.opt['--simulate-merge-on'])
+            LOG.warning("\x1b[31;1m           - %s \x1b[0m",'reset --hard origin/%s' % self._context.opt['--simulate-merge-on'])
+            LOG.warning("\x1b[31;1m           - %s \x1b[0m",'merge $CI_COMMIT_SHA --no-commit --no-ff')
 
         #self.__simulate_merge_on(force_git_config)
 
