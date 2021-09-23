@@ -599,7 +599,7 @@ class CLIDriver(object):
           helm_cmd.run(command)
         except OSError as e: 
           # Recuperation des events pour debuggage
-          kubectl_cmd.run('get events --sort-by=.metadata.creationTimestamp --field-selector=type!=Normal|grep 10')
+          kubectl_cmd.run('get events --sort-by=.metadata.creationTimestamp --field-selector=type!=Normal|tail -10')
           raise e
 
         # Tout s'est bien passé, on clean la release ou le namespace si dernière release
