@@ -280,9 +280,9 @@ class CLIDriver(object):
         LOG.warning("\x1b[31;1m           - %s \x1b[0m",command)
         
         if self._context.opt['--simulate-merge-on']:
-            LOG.warning("\x1b[31;1m           - %s \x1b[0m",'checkout %s' % self._context.opt['--simulate-merge-on'])
-            LOG.warning("\x1b[31;1m           - %s \x1b[0m",'reset --hard origin/%s' % self._context.opt['--simulate-merge-on'])
-            LOG.warning("\x1b[31;1m           - %s \x1b[0m",'merge $CI_COMMIT_SHA --no-commit --no-ff')
+            LOG.warning("\x1b[31;1m           - %s \x1b[0m",'git checkout %s' % self._context.opt['--simulate-merge-on'])
+            LOG.warning("\x1b[31;1m           - %s \x1b[0m",'git reset --hard origin/%s' % self._context.opt['--simulate-merge-on'])
+            LOG.warning("\x1b[31;1m           - %s \x1b[0m",'git merge $CI_COMMIT_SHA --no-commit --no-ff')
 
         #self.__simulate_merge_on(force_git_config)
 
