@@ -672,6 +672,20 @@ services:
             {'cmd': 'podman push %s/%s/cdp:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}        ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1','--docker-build-target=cdp'}, verif_cmd)
 
+    def test_docker_usedocker_imagetagsha1_usecustomregistry_with_dockerhub_login(self):
+        registry_user='dockerhub'
+        registry_token="token"
+        self.fakeauths["auths"] = {}
+        verif_cmd = [
+            {'cmd': self.__getLoginString("https://index.docker.io/v1/",registry_user, registry_token), 'output': 'unnecessary'},
+            {'cmd': self.__getLoginString(TestCliDriver.cdp_custom_registry,TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
+            {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
+            {'cmd': 'podman build -t %s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'podman push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}   
+        ]
+        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1' }, verif_cmd,env_vars = {'CDP_DOCKERHUB_REGISTRY_USER': registry_user,'CDP_DOCKERHUB_READ_ONLY_TOKEN': registry_token })
+
+
     def test_docker_imagetagsha1_useawsecr(self):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
