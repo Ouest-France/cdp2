@@ -39,6 +39,9 @@ class Context(object):
                              os.getenv('CDP_%s_REGISTRY_USER' % opt['--login-registry'].upper(), None),
                              os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--login-registry'].upper(), None))
 
+        # Login to Dockerhub if needed
+        self.__loginDockerhub()
+
         if opt['--use-registry'] != 'none':
             if opt['maven'] or opt['docker'] or opt['k8s']:
                 if opt['--use-registry'] == 'aws-ecr' :
