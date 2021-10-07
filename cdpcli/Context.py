@@ -100,10 +100,11 @@ class Context(object):
         return os.environ['CI_PROJECT_PATH'].lower()
 
     @property
-    def registryRepositoryName(self):
-        if self.opt['--use-registry']=="harbor":
-           return '%s/%s' % (self.project_name, self.project_name)
-        return self.repository
+    def registryImagePath(self):
+        if self.opt['--use-registry']=="harbor":         
+           return '%s/%s' % (self.project_name, self.opt['--image-name'] if self.opt['--image-name'] else self.project_name)
+       
+        return os.environ['CI_PROJECT_NAMESPACE'].lower() + "/" + self.opt['--image-name'] if self.opt['--image-name']  else self.repository 
 
     @property
     def project_name(self):
