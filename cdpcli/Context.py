@@ -161,7 +161,7 @@ class Context(object):
           if self._opt[commandlineParam]:
               value = self._opt[commandlineParam]
           else: 
-            if (os.getenv(envvar, None) is not None):
+            if (len(os.getenv(envvar, '')) > 0 ):
                value = os.getenv(envvar)        
         except KeyError: 
             value = defaultValue
