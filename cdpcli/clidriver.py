@@ -305,7 +305,7 @@ class CLIDriver(object):
             elif (self._context.opt['--docker-build-target']):
                 repos.append('%s/%s' % (self._context.repository, self._context.opt['--docker-build-target']))
             elif self._context.opt['--use-docker-compose']:
-                raise ValueError('docker-compose is deprecated.')
+                 sys.exit('docker-compose is deprecated.')
 
             for repo in repos:
                 try:
@@ -333,7 +333,7 @@ class CLIDriver(object):
             upload_file = self._context.opt['--delete']
             http_verb = 'DELETE'
         else:
-            raise ValueError('Incorrect option with artifactory command.')
+             sys.exit('Incorrect option with artifactory command.')
 
         # Tag and push docker image
         if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1'] or self._context.opt['--image-tag']) or self._context.opt['--image-tag-branch-name']:
@@ -397,7 +397,7 @@ class CLIDriver(object):
               output = self._cmd.run_command('/cdp/scripts/migrate_helm.sh -n %s -r %s' % (namespace, release))            
            except OSError as e:            
               if e.errno > 1:
-                 raise ValueError('Migration to helm 3 of release %s has failed : %s' % (release, str(e)))
+                  sys.exit('Migration to helm 3 of release %s has failed : %s' % (release, str(e)))
               if e.errno == 1:
                  cleanupHelm2 = True
 
@@ -603,7 +603,7 @@ class CLIDriver(object):
         except OSError as e: 
           # Recuperation des events pour debuggage
           kubectl_cmd.run('get events --sort-by=.metadata.creationTimestamp --field-selector=type!=Normal|tail -10')
-          raise e
+          sys.exit("cdp k8s aborted")
 
         # Tout s'est bien passé, on clean la release ou le namespace si dernière release
         if cleanupHelm2:
@@ -704,7 +704,7 @@ class CLIDriver(object):
         img_cmd = PodmanCommand(self._cmd)
         image_tag = self.__getImageTag(self.__getImageName(), tag)
         if self._context.opt['--use-docker-compose']:
-             raise ValueError('docker-compose is deprecated.')
+              sys.exit('docker-compose is deprecated.')
         else:
           images_to_build = self.__getImagesToBuild(self.__getImageName(), tag)
           for image_to_build in images_to_build:
