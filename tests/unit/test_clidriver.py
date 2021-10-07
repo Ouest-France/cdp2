@@ -132,10 +132,12 @@ class TestCliDriver(unittest.TestCase):
     ci_commit_ref_name = 'branch_helloworld_with_many.characters/because_helm_k8s_because_the_length_must_not_longer_than.63'
     ci_commit_ref_slug = 'branch_helloworld_with_many-characters_because_helm_k8s_because_the_length_must_not_longer_than_63'
     ci_registry_image = 'registry.gitlab.com/helloworld/helloworld'
+    ci_registry_newimage = 'registry.gitlab.com/helloworld/monimage'
     ci_project_id = '14'
     ci_project_name = 'hello-world'
     ci_project_name_first_letter = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z0-9]', ci_project_name)])
     ci_pnfl_project_id_commit_ref_slug = '%s%s-%s' % (ci_project_name_first_letter, ci_project_id, ci_commit_ref_slug)
+    ci_project_namespace = 'HelloWorld'
     ci_project_path = 'HelloWorld/HelloWorld'
     ci_project_path_slug = 'helloworld-helloworld'
     ci_deploy_user = 'gitlab+deploy-token-1'
@@ -536,6 +538,7 @@ services:
         os.environ['CI_REGISTRY_IMAGE'] = TestCliDriver.ci_registry_image
         os.environ['CI_PROJECT_ID'] = TestCliDriver.ci_project_id
         os.environ['CI_PROJECT_NAME'] = TestCliDriver.ci_project_name
+        os.environ['CI_PROJECT_NAMESPACE'] = TestCliDriver.ci_project_namespace
         os.environ['CI_PROJECT_PATH'] = TestCliDriver.ci_project_path
         os.environ['CI_PROJECT_PATH_SLUG'] = TestCliDriver.ci_project_path_slug
         os.environ['CI_DEPLOY_USER'] = TestCliDriver.ci_deploy_user
@@ -591,6 +594,25 @@ services:
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-gitlab-registry', '--login-registry=harbor', '--sleep=%s' % sleep },
             verif_cmd, docker_host = docker_host, env_vars = {'DOCKER_HOST': docker_host, 'CI_REGISTRY': TestCliDriver.ci_registry})
 
+    def test_docker_usedocker_imagetagbranchname_usegitlabregistry_with_image_name_sleep_docker_host(self):
+        # Create FakeCommand
+        self.fakeauths["auths"] = {}
+        aws_host = 'ecr.amazonaws.com'
+        login_cmd = 'docker login -u user -p pass https://%s' % aws_host
+        sleep = 10
+
+        docker_host = 'unix:///var/run/docker.sock'
+
+        verif_cmd = [
+            {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
+            {'cmd': self.__getLoginString(TestCliDriver.ci_registry,TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token), 'output': 'unnecessary'},
+            {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
+            {'cmd': 'podman build -t %s:%s -f ./Dockerfile .' % (TestCliDriver.ci_registry_newimage, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
+            {'cmd': 'podman push %s:%s' % (TestCliDriver.ci_registry_newimage, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-gitlab-registry', '--image-name=monimage','--login-registry=harbor', '--sleep=%s' % sleep },
+            verif_cmd, docker_host = docker_host, env_vars = {'DOCKER_HOST': docker_host, 'CI_REGISTRY': TestCliDriver.ci_registry})
+
     def test_docker_usedocker_imagetagbranchname_useharborregistry_sleep_docker_host(self):
         # Create FakeCommand
         self.fakeauths["auths"] = {}
@@ -606,6 +628,23 @@ services:
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--sleep=%s' % sleep },
+            verif_cmd, docker_host = docker_host, env_vars = {'DOCKER_HOST': docker_host, 'CI_REGISTRY': TestCliDriver.ci_registry})
+
+    def test_docker_usedocker_imagetagbranchname_useharborregistry_with_image_name_sleep_docker_host(self):
+        # Create FakeCommand
+        self.fakeauths["auths"] = {}
+        sleep = 10
+
+        docker_host = 'unix:///var/run/docker.sock'
+
+        verif_cmd = [
+            {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
+            {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
+            {'cmd': 'podman build -t %s/%s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name,"monimage",TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
+            {'cmd': 'podman push %s/%s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name,"monimage", TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            
+            {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--image-name=monimage','--sleep=%s' % sleep },
             verif_cmd, docker_host = docker_host, env_vars = {'DOCKER_HOST': docker_host, 'CI_REGISTRY': TestCliDriver.ci_registry})
 
     @patch('cdpcli.clidriver.os.path.isfile', return_value=True)
@@ -1236,6 +1275,7 @@ services:
         # GITLAB API check
         mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
@@ -1672,6 +1712,79 @@ services:
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
     @freeze_time("2019-06-25 11:55:27")
+    def test_k8s_harbor_forcebyenvnamespaceprojectname_with_default_chart_and_imagename(self, mock_dump_all, mock_copyfile, mock_dump, mock_makedirs, mock_isfile, mock_isdir, mock_Gitlab):
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab)
+
+        # Create FakeCommand
+        namespace = TestCliDriver.ci_project_name
+        namespace = namespace.replace('_', '-')[:63]
+        release = namespace[:53]
+        staging_file = 'values.staging.yaml'
+        int_file = 'values.int.yaml'
+        values = ','.join([staging_file, int_file])
+        deploy_spec_dir = 'charts'
+        final_deploy_spec_dir = '%s_final' % deploy_spec_dir
+        tmp_chart_dir="/cdp/k8s/charts"
+        date_now = datetime.datetime.utcnow()
+        deleteDuration=240
+        self.fakeauths["auths"] = {}
+        mock_makedirs.maxDiff = None
+        m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
+        mock_all_resources_yaml = mock_open()
+        #m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
+        with patch("builtins.open", m):
+            verif_cmd = [
+                {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
+                {'cmd': 'curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz?sha=master | tar zx --wildcards --strip 2 -C %s \'*/default\''
+                  % (TestCliDriver.cdp_gitlab_api_token, TestCliDriver.cdp_gitlab_api_url, TestCliDriver.chart_repo, tmp_chart_dir), 'output': 'unnecessary'},
+                {'cmd': 'cp -R /cdp/k8s/charts/* charts/', 'output': 'unnecessary'},
+                {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
+                {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
+                        namespace,
+                        release,
+                        TestCliDriver.cdp_dns_subdomain_staging,
+                        TestCliDriver.cdp_dns_subdomain_staging,
+                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.cdp_harbor_registry,
+                        TestCliDriver.ci_project_name + '/monimage',
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.cdp_harbor_registry_user,
+                        TestCliDriver.cdp_harbor_registry_read_only_token,
+                        TestCliDriver.cdp_harbor_registry.replace(':', '-'),
+                        release,
+                        staging_file,
+                        int_file,
+                        namespace,
+                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
+                    % (release,
+                        final_deploy_spec_dir,
+                        namespace)
+                        , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
+            ]
+            self.__run_CLIDriver({ 'k8s', '--use-registry=harbor', '--namespace-project-branch-name',  '--use-chart=default','--image-name=monimage','--values=%s' % values}, verif_cmd,
+                env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
+
+            mock_isfile.assert_has_calls([call('%s/values.yaml' % deploy_spec_dir), call('%s/Chart.yaml' % deploy_spec_dir)])
+            mock_makedirs.assert_has_calls([call('%s/templates'% deploy_spec_dir, 511, True), call('%s/templates' % final_deploy_spec_dir)],True)
+            mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
+
+        # GITLAB API check
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
+        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
+    @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
+    @patch('cdpcli.clidriver.os.path.isfile', return_value=False)
+    @patch('cdpcli.clidriver.os.makedirs')
+    @patch("cdpcli.clidriver.yaml.dump")
+    @patch("cdpcli.clidriver.shutil.copyfile")
+    @patch("cdpcli.clidriver.yaml.dump_all")
+    @freeze_time("2019-06-25 11:55:27")
     def test_k8s_harbor_customnamespace(self, mock_dump_all, mock_copyfile, mock_dump, mock_makedirs, mock_isfile, mock_isdir, mock_Gitlab):
         #Get Mock
         mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab)
@@ -1737,6 +1850,7 @@ services:
         # GITLAB API check
         mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
     @patch('cdpcli.clidriver.os.path.isfile', return_value=False)

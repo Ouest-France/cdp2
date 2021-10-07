@@ -13,6 +13,7 @@ Usage:
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-gitlab-registry] [--use-aws-ecr] [--use-custom-registry] [--use-registry=<registry_name>]
         [--use-docker | --use-docker-compose]
+        [--image-name=<image_name>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
         [--build-context=<path>]
         [--build-arg=<arg> ...]
@@ -25,7 +26,8 @@ Usage:
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-gitlab-registry] [--use-aws-ecr] [--use-custom-registry] [--use-registry=<registry_name>] 
         [--helm-version=<version>]
-        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>] [--full-image-path=<registry/repository/image:tag>]
+        [--image-name=<image_name>] [--full-image-path=<registry/repository/image:tag>]
+        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>] 
         [--image-prefix-tag=<tag>]
         [(--create-gitlab-secret)]
         [(--create-gitlab-secret-hook)]
@@ -76,6 +78,7 @@ Options:
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --helm-version=<version>                                   Major version of Helm. [default: 3]
     --helm-migration=<true|false>                              Do helm 2 to Helm 3 migration
+    --image-name=<image_name>                                  Force the name of the image. Default is namespace name.
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
@@ -302,7 +305,7 @@ class CLIDriver(object):
             elif (self._context.opt['--docker-build-target']):
                 repos.append('%s/%s' % (self._context.repository, self._context.opt['--docker-build-target']))
             elif self._context.opt['--use-docker-compose']:
-                raise ValueError('docker-compose is deprecated.')
+                 sys.exit('docker-compose is deprecated.')
 
             for repo in repos:
                 try:
@@ -330,7 +333,7 @@ class CLIDriver(object):
             upload_file = self._context.opt['--delete']
             http_verb = 'DELETE'
         else:
-            raise ValueError('Incorrect option with artifactory command.')
+             sys.exit('Incorrect option with artifactory command.')
 
         # Tag and push docker image
         if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1'] or self._context.opt['--image-tag']) or self._context.opt['--image-tag-branch-name']:
@@ -394,7 +397,7 @@ class CLIDriver(object):
               output = self._cmd.run_command('/cdp/scripts/migrate_helm.sh -n %s -r %s' % (namespace, release))            
            except OSError as e:            
               if e.errno > 1:
-                 raise ValueError('Migration to helm 3 of release %s has failed : %s' % (release, str(e)))
+                  sys.exit('Migration to helm 3 of release %s has failed : %s' % (release, str(e)))
               if e.errno == 1:
                  cleanupHelm2 = True
 
@@ -470,7 +473,7 @@ class CLIDriver(object):
           set_command = '%s --set image.fullImagePath=%s' % (set_command,self._context.opt['--full-image-path'] )
         else:
            set_command = '%s --set image.registry=%s' % (set_command,  self._context.registry)
-           set_command = '%s --set image.repository=%s' % (set_command, self._context.registryRepositoryName)
+           set_command = '%s --set image.repository=%s' % (set_command, self._context.registryImagePath)
            set_command = '%s --set image.tag=%s' % (set_command, tag)
         set_command = '%s --set image.pullPolicy=%s' % (set_command, pullPolicy)
         tlsSecretName = self._context.getParamOrEnv("ingress-tlsSecretName")
@@ -600,7 +603,7 @@ class CLIDriver(object):
         except OSError as e: 
           # Recuperation des events pour debuggage
           kubectl_cmd.run('get events --sort-by=.metadata.creationTimestamp --field-selector=type!=Normal|tail -10')
-          raise e
+          sys.exit("cdp k8s aborted")
 
         # Tout s'est bien passé, on clean la release ou le namespace si dernière release
         if cleanupHelm2:
@@ -701,7 +704,7 @@ class CLIDriver(object):
         img_cmd = PodmanCommand(self._cmd)
         image_tag = self.__getImageTag(self.__getImageName(), tag)
         if self._context.opt['--use-docker-compose']:
-             raise ValueError('docker-compose is deprecated.')
+              sys.exit('docker-compose is deprecated.')
         else:
           images_to_build = self.__getImagesToBuild(self.__getImageName(), tag)
           for image_to_build in images_to_build:
@@ -771,7 +774,7 @@ class CLIDriver(object):
 
     def __getImageName(self):
         # Configure docker registry
-        image_name = '%s/%s' % (self._context.registry, self._context.registryRepositoryName)
+        image_name = '%s/%s' % (self._context.registry, self._context.registryImagePath)
         if self._context.opt['--docker-build-target']:
            image_name = '%s/%s' % (image_name, self._context.opt['--docker-build-target'])
         return image_name
