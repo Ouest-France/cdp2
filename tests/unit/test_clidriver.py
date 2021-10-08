@@ -647,6 +647,23 @@ services:
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--image-name=monimage','--sleep=%s' % sleep },
             verif_cmd, docker_host = docker_host, env_vars = {'DOCKER_HOST': docker_host, 'CI_REGISTRY': TestCliDriver.ci_registry})
 
+    def test_docker_usedocker_imagetagbranchname_useharborregistry_with_image_name_and_repository(self):
+        # Create FakeCommand
+        self.fakeauths["auths"] = {}
+        sleep = 10
+
+        docker_host = 'unix:///var/run/docker.sock'
+
+        verif_cmd = [
+            {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
+            {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
+            {'cmd': 'podman build -t %s/%s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, "monrepository","monimage",TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
+            {'cmd': 'podman push %s/%s/%s:%s' % (TestCliDriver.cdp_harbor_registry, "monrepository","monimage", TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            
+            {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--image-repository=monrepository','--image-name=monimage','--sleep=%s' % sleep },
+            verif_cmd, docker_host = docker_host, env_vars = {'DOCKER_HOST': docker_host, 'CI_REGISTRY': TestCliDriver.ci_registry})
+
     @patch('cdpcli.clidriver.os.path.isfile', return_value=True)
     def test_docker_usedocker_imagetagbranchname_useharborregistry_multi_build(self,mock_is_file):
         # Create FakeCommand

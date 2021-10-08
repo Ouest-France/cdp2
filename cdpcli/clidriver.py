@@ -13,7 +13,7 @@ Usage:
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-gitlab-registry] [--use-aws-ecr] [--use-custom-registry] [--use-registry=<registry_name>]
         [--use-docker | --use-docker-compose]
-        [--image-name=<image_name>]
+        [--image-name=<image_name>] [--image-repository=<repository>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
         [--build-context=<path>]
         [--build-arg=<arg> ...]
@@ -26,7 +26,7 @@ Usage:
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-gitlab-registry] [--use-aws-ecr] [--use-custom-registry] [--use-registry=<registry_name>] 
         [--helm-version=<version>]
-        [--image-name=<image_name>] [--full-image-path=<registry/repository/image:tag>]
+        [--image-name=<image_name>] [--image-repository=<repository>] [--full-image-path=<registry/repository/image:tag>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>] 
         [--image-prefix-tag=<tag>]
         [(--create-gitlab-secret)]
@@ -78,6 +78,7 @@ Options:
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --helm-version=<version>                                   Major version of Helm. [default: 3]
     --helm-migration=<true|false>                              Do helm 2 to Helm 3 migration
+    --image-repository=<repository>                            Force the name of the repository of the image. Default is Gitlab project path (ou project_name for Harbor).
     --image-name=<image_name>                                  Force the name of the image. Default is namespace name.
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
