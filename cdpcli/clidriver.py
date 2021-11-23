@@ -38,7 +38,7 @@ Usage:
         [--namespace-project-name | --namespace-name=<namespace_name> ] [--namespace-project-branch-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--helm-migration=[true|false]]
-        [--chart-repo=<repo>] [--use-chart=<chart:branch>]
+        [--chart-repo=<repo>] [--use-chart=<chart:branch>] [--chart-subtype=<subtype>]
         [--timeout=<timeout>]
         [--tiller-namespace]
         [--release-project-branch-name] [--release-project-env-name] [--release-project-name] [--release-shortproject-name] [--release-namespace-name] [--release-custom-name=<release_name>]
@@ -64,6 +64,7 @@ Options:
     --build-file=<buildFile>                                   Specify the file to build multiples images [default: cdp-build-file.yml].
     --chart-repo=<repo>                                        Path of the repository of default charts
     --use-chart=<chart:branch>                                 Name of the pre-defined chart to use. Format : name or name:branch
+    --chart-subtype=<subtype>                                  Subtype of chart if needed. Allowed values : php
     --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
     --conftest-namespaces=<namespaces>                         Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACES is used if empty.
     --create-default-helm                                      Create default helm for simple project (One docker image).
@@ -134,6 +135,8 @@ import json
 import gitlab
 import pyjq
 import shutil
+import glob
+
 
 from .Context import Context
 from .clicommand import CLICommand
@@ -434,6 +437,12 @@ class CLIDriver(object):
             self._cmd.run_command('cp -R %s/* %s/' % (tmp_chart_dir, self._context.opt['--deploy-spec-dir']))
             #shutil.copytree('%s' % tmp_chart_dir, '%s' % self._context.opt['--deploy-spec-dir'])
 
+            # add sub-type values
+            if self._context.opt['--chart-subtype']:
+               if os.path.isfile('%s/values-%s.yaml' % (self._context.opt['--deploy-spec-dir'], self._context.opt['--chart-subtype'])):
+                  self._context.opt['--values'] = "values-" + self._context.opt['--chart-subtype'] + ".yaml" + ("," + self._context.opt['--values'] if self._context.opt['--values'] else "")
+               else:
+                   print("File %s/values-%s.yaml non found -- pass " %(self._context.opt['--deploy-spec-dir'], self._context.opt['--chart-subtype']) ) 
 
         shutil.copyfile('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir'], '%s/Chart.yaml' % final_deploy_spec_dir)
 
