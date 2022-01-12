@@ -266,7 +266,7 @@ deploy_staging:
 You can build multiple images in one command by creating a cdp-build-file.yml file in the root of your project. 
 This file follows the same description as the docker-compose.yml files
 
-CDP_REPOSITOY, CDP_REGISTRY and CDP_TAG environment variables are automatically set by CDP and refer to the path of repository, the current built image and the tag issued from --image-tagx options.
+CDP_REGISTRY,CDP_IMAGE_PATH and CDP_TAG environment variables are automatically set by CDP and refer to the path of repository, the current built image and the tag issued from --image-tagx options.
 
 ```yaml
 version: '3'

@@ -767,8 +767,8 @@ class CLIDriver(object):
     def __getImagesToBuild(self,image, tag):
 
         os.environ['CDP_TAG'] = tag
-        os.environ['CDP_REGISTRY'] = '%s/%s' % (self._context.registry, self._context.project_name)
-        os.environ['CDP_REPOSITORY'] = image
+        os.environ['CDP_REGISTRY'] = '%s/%s' % (self._context.registry, self._context.project_namespace)
+        os.environ['CDP_IMAGE_PATH'] = image
 
         # Default image if no build file
         images_to_build = [ {"composant": "image", "dockerfile" : "Dockerfile","context": self._context.opt['--build-context'],"image": self.__getImageTag(image, tag)}]
