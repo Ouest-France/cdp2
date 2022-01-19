@@ -42,7 +42,7 @@ Usage:
         [--timeout=<timeout>]
         [--tiller-namespace]
         [--release-project-branch-name] [--release-project-env-name] [--release-project-name] [--release-shortproject-name] [--release-namespace-name] [--release-custom-name=<release_name>]
-        [--image-pull-secret] [--ingress-tlsSecretName=<secretName>]
+        [--image-pull-secret] [--ingress-tlsSecretName=<secretName>] [--ingress-tlsSecretNamespace=<secretNamespace>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
         [--volume-from=<host_type>]
@@ -86,6 +86,7 @@ Options:
     --image-tag=<tag>                                          Tag name
     --image-prefix-tag=<tag>                                   Tag prefix for docker image.
     --ingress-tlsSecretName=<secretName>                       Name of the tls secret for ingress 
+    --ingress-tlsSecretNamespace=<secretNamespace>             Namespace of the tls secret    
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
@@ -484,6 +485,9 @@ class CLIDriver(object):
            set_command = '%s --set image.repository=%s' % (set_command, self._context.registryImagePath)
            set_command = '%s --set image.tag=%s' % (set_command, tag)
         set_command = '%s --set image.pullPolicy=%s' % (set_command, pullPolicy)
+        tlsSecretNamespace = self._context.getParamOrEnv("ingress-tlsSecretNamespace")
+        if (tlsSecretNamespace):
+            set_command = '%s --set ingress.tlsSecretNamespace=%s' % (set_command, tlsSecretNamespace)
         tlsSecretName = self._context.getParamOrEnv("ingress-tlsSecretName")
         if (tlsSecretName):
             set_command = '%s --set ingress.tlsSecretName=%s' % (set_command, tlsSecretName)
