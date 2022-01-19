@@ -1,6 +1,6 @@
 docopt==0.6.2
 pyjq==2.5.2
-python-gitlab==2.10.1
-ruamel.yaml==0.17.17
+ruamel.yaml==0.17.20
+python-gitlab==3.1.0
 verboselogs==1.7
 envsubst==0.1.5

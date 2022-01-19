@@ -34,7 +34,7 @@ Usage:
         [(--use-docker-compose)] 
         [--build-file=<buildFile>]
         [--values=<files>]
-        [--delete-labels=<minutes>]
+        [--delete-labels=<minutes>|--release-ttl=<minutes>]
         [--namespace-project-name | --namespace-name=<namespace_name> ] [--namespace-project-branch-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--helm-migration=[true|false]]
@@ -70,7 +70,6 @@ Options:
     --create-default-helm                                      Create default helm for simple project (One docker image).
     --create-gitlab-secret                                     Create a secret from gitlab env starting with CDP_SECRET_<Environnement>_ where <Environnement> is the gitlab env from the job ( or CI_ENVIRONNEMENT_NAME )
     --create-gitlab-secret-hook                                Create gitlab secret with hook
-    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
@@ -95,6 +94,7 @@ Options:
     --no-conftest                                              Do not run conftest validation tests.
     --path=<path>                                              Path to validate [default: configurations].
     --put=<file>                                               Put file to artifactory.
+    --release-ttl=<minutes>                                    Set ttl (Time to live) time for the release. Will be removed after the time.
     --release-custom-name=<release_name>                       Customize release name with namespace-name-<release_name>
     --release-namespace-name                                   Force the release to be created with the namespace name. Same as --release-project-name if namespace-name option is not set. [default]
     --release-project-branch-name                              Force the release to be created with the project branch name.
@@ -125,6 +125,7 @@ Deprecated options:
     --use-docker-compose                                       Use docker-compose to build / push image / retag container [DEPRECATED]
     --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default]. [DEPRECATED]
     --volume-from=<host_type>                                  Volume type of sources - docker, k8s, local or docker volume description (dir:mount) [DEPRECATED] 
+    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.[DEPRECATED] 
 """
 import base64
 import configparser
@@ -216,6 +217,10 @@ class CLIDriver(object):
             if (not opt['--namespace-project-name'] and opt['--namespace-name']):
                 opt["--namespace-project-name"] = True                      
 
+            if opt['--delete-labels']:
+                 LOG.warning("\x1b[31;1mWARN : Option --delete-labels is DEPRECATED and is replaced by --release-ttl\x1b[0m")
+                 opt["--release-ttl"] = opt['--delete-labels']
+
 
     def main(self, args=None):
         exclusiveReleaseOptions = ["--release-project-branch-name","--release-project-env-name","--release-project-name","--release-shortproject-name","--release-namespace-name","--release-custom-name"]            
@@ -238,6 +243,8 @@ class CLIDriver(object):
                 self.check_runner_permissions("k8s")
                 self.check_mutually_exclusives_options(self._context.opt, exclusiveReleaseOptions, 0)
                 self.check_mutually_exclusives_options(self._context.opt, exclusiveTagsOptions, 0)
+                if (self._context.opt['--release-ttl'] and self._context.opt['--use-registry'] != 'gitlab' and self._context.opt['--use-registry'] != 'aws-ecr'):
+                    sys.exit("k8s command with --release-ttl flag can only be used vith gitlab or aws ecr registry")
                 self.__k8s()
 
             if self._context.opt['conftest']:
@@ -367,21 +374,14 @@ class CLIDriver(object):
                pullPolicy = 'Always'
 
         # Gestion des prefix des tags pour la retention auto de Harbor            
-        prefixs = []
-        # Ajout systématique pour les releases tempo 
-        if self._context.opt['--delete-labels']:
-              prefixs.append("fb")
-
         prefix = self._context.getParamOrEnv("image-prefix-tag")
         if prefix:
-           prefixs.append(prefix)
-
-        if len(prefixs) > 0:
             # Apply prefix to all built images
             images = self.__getImagesToBuild(self.__getImageName(), tag)
             for image in images:
                 imagePath = image["image"].rsplit(':', 1)[0]
-                self.__addPrefixToTag(imagePath, tag, prefixs)
+                self.__addPrefixToTag(imagePath, tag, prefix)
+            tag = "%s-%s" % (prefix,tag)
             
         # Use release name instead of the namespace name for release
         release = self.__getRelease().replace('/', '-')
@@ -524,8 +524,8 @@ class CLIDriver(object):
 
         now = datetime.datetime.utcnow()
         date_format = '%Y-%m-%dT%H%M%S'
-        if self._context.opt['--delete-labels']:
-            command = '%s --description deletionTimestamp=%sZ' % (command,(now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format))
+        if self._context.opt['--release-ttl']:
+            command = '%s --description deletionTimestamp=%sZ' % (command,(now + datetime.timedelta(minutes = int(self._context.opt['--release-ttl']))).strftime(date_format))
 
         # Template charts for secret
         tmp_templating_file = '%s/all_resources.tmp' % final_deploy_spec_dir
@@ -570,7 +570,7 @@ class CLIDriver(object):
                 if doc is not None:
                     # Ajout du label deletable sur tous les objets si la release est temporaire
                     if "metadata" in doc and "labels" in doc['metadata']:
-                       doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--delete-labels'] else "false"
+                       doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--release-ttl'] else "false"
 
                     final_docs.append(doc)
                     CLIDriver.addGitlabLabels(doc)
@@ -691,15 +691,14 @@ class CLIDriver(object):
                       doc['spec']['template']['metadata']['labels'][tag[0]] = tag[1]
         return doc
 
-    def __addPrefixToTag(self, image_repo, tag, prefixs):
+    def __addPrefixToTag(self, image_repo, tag, prefix):
       try:
-        for prefix in prefixs:
-           prefixTag = "%s-%s" % (prefix, tag)
-           source_image_tag = self.__getImageTag(image_repo,  tag)
-           dest_image_tag = self.__getImageTag(image_repo, prefixTag)
-           LOG.info("Nouveau tag %s sur l'image %s" % (dest_image_tag, source_image_tag))
-           # Utilisation de Skopeo
-           self._cmd.run_command('skopeo copy docker://%s docker://%s' % (source_image_tag, dest_image_tag))
+        prefixTag = "%s-%s" % (prefix, tag)
+        source_image_tag = self.__getImageTag(image_repo,  tag)
+        dest_image_tag = self.__getImageTag(image_repo, prefixTag)
+        LOG.info("Nouveau tag %s sur l'image %s" % (dest_image_tag, source_image_tag))
+        # Utilisation de Skopeo
+        self._cmd.run_command('skopeo copy docker://%s docker://%s' % (source_image_tag, dest_image_tag))
       except OSError as e:
                print('************************** SKPEO *******************************')
                print(e)

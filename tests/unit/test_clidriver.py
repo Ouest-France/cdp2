@@ -2065,7 +2065,7 @@ services:
                         TestCliDriver.ci_commit_sha[:8],
                         TestCliDriver.cdp_harbor_registry,
                         TestCliDriver.ci_project_namespace + "/" + TestCliDriver.ci_project_name,
-                        TestCliDriver.ci_commit_ref_slug,
+                        prefix+"-"+TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_harbor_registry_user,
                         TestCliDriver.cdp_harbor_registry_read_only_token,
                         TestCliDriver.cdp_harbor_registry.replace(':', '-'),
@@ -2141,7 +2141,7 @@ services:
                         TestCliDriver.ci_commit_sha[:8],
                         TestCliDriver.cdp_harbor_registry,
                         TestCliDriver.ci_project_namespace+ "/" + TestCliDriver.ci_project_name,
-                        TestCliDriver.ci_commit_ref_slug,
+                        prefix+ "-" +TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_harbor_registry_user,
                         TestCliDriver.cdp_harbor_registry_read_only_token,
                         TestCliDriver.cdp_harbor_registry.replace(':', '-'),
@@ -2192,9 +2192,8 @@ services:
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
         m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
-        prefix="fb"
         image_tag = "%s/%s:%s" % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha)
-        dest_image_tag = "%s/%s:%s-%s" % (aws_host, TestCliDriver.ci_project_path.lower(), prefix, TestCliDriver.ci_commit_sha)
+        dest_image_tag = "%s/%s:%s" % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha)
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
 
         with patch("builtins.open", m):
@@ -2203,7 +2202,6 @@ services:
                 {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
                 {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
                 {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
-                {'cmd': 'skopeo copy docker://%s docker://%s'  % (image_tag, dest_image_tag), 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --values %s/%s --namespace=%s > %s/all_resources.tmp'
@@ -2228,7 +2226,7 @@ services:
                         namespace,
                         date_delete.strftime(date_format)), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
             ]
-            self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-registry=aws-ecr', '--namespace-project-branch-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes }, verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-registry=aws-ecr', '--namespace-project-branch-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--release-ttl=%s' % delete_minutes }, verif_cmd,
                 env_vars = {'CDP_ECR_PATH' : aws_host,'CI_RUNNER_TAGS': 'test, test2'})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -2610,7 +2608,7 @@ services:
                             TestCliDriver.ci_commit_sha[:8],
                             aws_host,
                             TestCliDriver.ci_project_path.lower(),
-                            TestCliDriver.ci_commit_sha,
+                            prefix + "-" + TestCliDriver.ci_commit_sha,
                             release,
                             namespace,
                             final_deploy_spec_dir), 'volume_from': 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
