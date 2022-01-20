@@ -78,8 +78,8 @@ Options:
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --helm-version=<version>                                   Major version of Helm. [default: 3]
     --helm-migration=<true|false>                              Do helm 2 to Helm 3 migration
-    --image-repository=<repository>                            Force the name of the repository of the image. Default is Gitlab project path (ou project_name for Harbor).
-    --image-name=<image_name>                                  Force the name of the image. Default is namespace name.
+    --image-repository=<repository>                            Force the name of the repository of the image. Default is Gitlab project path (or namespace for Harbor).
+    --image-name=<image_name>                                  Force the name of the image. Default is project name.
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
@@ -126,7 +126,7 @@ Deprecated options:
     --use-docker-compose                                       Use docker-compose to build / push image / retag container [DEPRECATED]
     --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default]. [DEPRECATED]
     --volume-from=<host_type>                                  Volume type of sources - docker, k8s, local or docker volume description (dir:mount) [DEPRECATED] 
-    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.[DEPRECATED] 
+    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup. use release-ttl instead [DEPRECATED] 
 """
 import base64
 import configparser
@@ -165,7 +165,7 @@ yaml.explicit_start = True
 
 def main():
     if len(sys.argv) > 1 and sys.argv[1] == "build":
-        sys.exit("build command is deprecated")
+        sys.exit("\x1b[31;1mERROR : build command is deprecated\x1b[0m")
 
     opt = docopt(__doc__, sys.argv[1:], version=__version__)
 
@@ -245,7 +245,7 @@ class CLIDriver(object):
                 self.check_mutually_exclusives_options(self._context.opt, exclusiveReleaseOptions, 0)
                 self.check_mutually_exclusives_options(self._context.opt, exclusiveTagsOptions, 0)
                 if (self._context.opt['--release-ttl'] and self._context.opt['--use-registry'] != 'gitlab' and self._context.opt['--use-registry'] != 'aws-ecr'):
-                    sys.exit("k8s command with --release-ttl flag can only be used vith gitlab or aws ecr registry")
+                    sys.exit("\x1b[31;1mERROR : k8s command with --release-ttl (or --delete-labels) flag can only be used vith gitlab or aws ecr registry\x1b[0m")
                 self.__k8s()
 
             if self._context.opt['conftest']:
@@ -315,8 +315,7 @@ class CLIDriver(object):
             elif (self._context.opt['--docker-build-target']):
                 repos.append('%s/%s' % (self._context.repository, self._context.opt['--docker-build-target']))
             elif self._context.opt['--use-docker-compose']:
-                 sys.exit('docker-compose is deprecated.')
-
+                 sys.exit("\x1b[31;1mERROR : docker-compose is deprecated.\x1b[0m")
             for repo in repos:
                 try:
                     aws_cmd.run('ecr list-images --repository-name %s --max-items 0' % repo)
@@ -343,7 +342,7 @@ class CLIDriver(object):
             upload_file = self._context.opt['--delete']
             http_verb = 'DELETE'
         else:
-             sys.exit('Incorrect option with artifactory command.')
+            sys.exit("\x1b[31;1mERROR : Incorrect option with artifactory command.\x1b[0m")
 
         # Tag and push docker image
         if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1'] or self._context.opt['--image-tag']) or self._context.opt['--image-tag-branch-name']:
@@ -400,7 +399,7 @@ class CLIDriver(object):
               output = self._cmd.run_command('/cdp/scripts/migrate_helm.sh -n %s -r %s' % (namespace, release))            
            except OSError as e:            
               if e.errno > 1:
-                  sys.exit('Migration to helm 3 of release %s has failed : %s' % (release, str(e)))
+                  sys.exit("\x1b[31;1mERROR : Migration to helm 3 of release %s has failed : %s\x1b[0m" % (release, str(e)))
               if e.errno == 1:
                  cleanupHelm2 = True
 
@@ -417,7 +416,7 @@ class CLIDriver(object):
             os.makedirs('%s/templates' % self._context.opt['--deploy-spec-dir'],0o777, True)
             # Check that the chart dir no exists
             if os.path.isfile('%s/values.yaml' % self._context.opt['--deploy-spec-dir']):
-               sys.exit('ERROR - Filename %s/values.yaml must not be used when --use-chart is set. Please rename to another name (Ex : values-common.yml)' )
+               sys.exit("\x1b[31;1mERROR : Filename values.yaml must not be used when --use-chart is set. Please rename to another name (Ex : values-common.yml)\x1b[0m")
             else:
                 chartIsPresent = False
                 #Download predefined chart in a temporary directory
@@ -481,6 +480,7 @@ class CLIDriver(object):
         if (self._context.opt['--full-image-path']):
           set_command = '%s --set image.fullImagePath=%s' % (set_command,self._context.opt['--full-image-path'] )
         else:
+           # set_command = '%s --set image.fullImagePath=%s/%s:%s' % (set_command, self._context.registry, self._context.registryImagePath, tag)
            set_command = '%s --set image.registry=%s' % (set_command,  self._context.registry)
            set_command = '%s --set image.repository=%s' % (set_command, self._context.registryImagePath)
            set_command = '%s --set image.tag=%s' % (set_command, tag)
@@ -615,7 +615,7 @@ class CLIDriver(object):
         except OSError as e: 
           # Recuperation des events pour debuggage
           kubectl_cmd.run('get events --sort-by=.metadata.creationTimestamp --field-selector=type!=Normal|tail -10')
-          sys.exit("cdp k8s aborted")
+          sys.exit("\x1b[31;1mERROR : cdp k8s aborted\x1b[0m")
 
         # Tout s'est bien passé, on clean la release ou le namespace si dernière release
         if cleanupHelm2:
@@ -715,7 +715,8 @@ class CLIDriver(object):
         img_cmd = PodmanCommand(self._cmd)
         image_tag = self.__getImageTag(self.__getImageName(), tag)
         if self._context.opt['--use-docker-compose']:
-              sys.exit('docker-compose is deprecated.')
+            sys.exit("\x1b[31;1mERROR : docker-compose is deprecated.\x1b[0m")
+
         else:
           images_to_build = self.__getImagesToBuild(self.__getImageName(), tag)
           for image_to_build in images_to_build:
@@ -1029,7 +1030,8 @@ class CLIDriver(object):
                     nbExclusiveOptions = nbExclusiveOptions +1
 
             if nbExclusiveOptions > 1:
-               sys.exit("Options %s are mutually exclusives" % ",".join(options))
+               sys.exit("\x1b[31;1mERROR : Options %s are mutually exclusives\x1b[0m" % ",".join(options))               
 
             if nbExclusiveOptions < minOccurrences:
                sys.exit("%s of %s is required (%s/%s)" % (minOccurrences, ",".join(options),minOccurrences,nbExclusiveOptions))
+               sys.exit("\x1b[31;1mERROR : %s of %s is required (%s/%s)\x1b[0m"% (minOccurrences, ",".join(options),minOccurrences,nbExclusiveOptions))               
