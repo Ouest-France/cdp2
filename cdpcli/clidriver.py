@@ -26,7 +26,7 @@ Usage:
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-gitlab-registry] [--use-aws-ecr] [--use-custom-registry] [--use-registry=<registry_name>] 
         [--helm-version=<version>]
-        [--image-name=<image_name>] [--image-repository=<repository>] [--full-image-path=<registry/repository/image:tag>]
+        [--image-name=<image_name>] [--image-repository=<repository>] [--image-fullname=<registry/repository/image:tag>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>] 
         [--image-prefix-tag=<tag>]
         [(--create-gitlab-secret)]
@@ -80,6 +80,7 @@ Options:
     --helm-migration=<true|false>                              Do helm 2 to Helm 3 migration
     --image-repository=<repository>                            Force the name of the repository of the image. Default is Gitlab project path (or namespace for Harbor).
     --image-name=<image_name>                                  Force the name of the image. Default is project name.
+    --image-fullname=<registry/repository/image:tag>           Use full image name overriding path calculated by CDP
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
@@ -107,7 +108,6 @@ Options:
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
     --use-docker                                               Use docker to build / push image [default].
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
-    --full-image-path=<registry/repository/image:tag>          Use full image path overriding path calculated by CDP
     --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
 Deprecated options:
@@ -226,7 +226,7 @@ class CLIDriver(object):
     def main(self, args=None):
         exclusiveReleaseOptions = ["--release-project-branch-name","--release-project-env-name","--release-project-name","--release-shortproject-name","--release-namespace-name","--release-custom-name"]            
         exclusiveRegistryOptions = ["--use-gitlab-registry","--use-aws-ecr","--use-custom-registry","--use-registry"]
-        exclusiveTagsOptions = ["--image-tag-branch-name","--image-tag-latest","--image-tag-sha1","--image-tag","--full-image-path"]
+        exclusiveTagsOptions = ["--image-tag-branch-name","--image-tag-latest","--image-tag-sha1","--image-tag","--image-fullname"]
         try:
             if self._context.opt['maven']:
                 self.check_runner_permissions("maven")
@@ -477,10 +477,10 @@ class CLIDriver(object):
         set_command = '%s --set ingress.host=%s' % (set_command, host)
         set_command = '%s --set ingress.subdomain=%s' % (set_command, os.getenv('CDP_DNS_SUBDOMAIN', None))
         set_command = '%s --set image.commit.sha=sha-%s' % (set_command, os.environ['CI_COMMIT_SHA'][:8])
-        if (self._context.opt['--full-image-path']):
-          set_command = '%s --set image.fullImagePath=%s' % (set_command,self._context.opt['--full-image-path'] )
+        if (self._context.opt['--image-fullname']):
+          set_command = '%s --set image.fullname=%s' % (set_command,self._context.opt['--image-fullname'] )
         else:
-           # set_command = '%s --set image.fullImagePath=%s/%s:%s' % (set_command, self._context.registry, self._context.registryImagePath, tag)
+           set_command = '%s --set image.fullname=%s/%s:%s' % (set_command, self._context.registry, self._context.registryImagePath, tag)
            set_command = '%s --set image.registry=%s' % (set_command,  self._context.registry)
            set_command = '%s --set image.repository=%s' % (set_command, self._context.registryImagePath)
            set_command = '%s --set image.tag=%s' % (set_command, tag)
@@ -771,7 +771,7 @@ class CLIDriver(object):
     def __getImagesToBuild(self,image, tag):
 
         os.environ['CDP_TAG'] = tag
-        os.environ['CDP_REGISTRY'] = '%s/%s' % (self._context.registry, self._context.project_namespace)
+        os.environ['CDP_REGISTRY'] = '%s/%s' % (self._context.registry, self._context.repository)
         os.environ['CDP_IMAGE_PATH'] = image
 
         # Default image if no build file

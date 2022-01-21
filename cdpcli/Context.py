@@ -97,19 +97,15 @@ class Context(object):
 
     @property
     def repository(self):
-        return self.opt['--image-repository'] if self.opt['--image-repository'] else os.environ['CI_PROJECT_PATH'].lower()
-
-    @property
-    def project_namespace(self):
-        return (self.opt['--image-repository'] if self.opt['--image-repository'] else os.environ['CI_PROJECT_NAMESPACE']).lower()
+        return self.opt['--image-repository'] if self.opt['--image-repository'] else ( self.project_name if self.opt['--use-registry']=="harbor" else os.environ['CI_PROJECT_PATH'].lower())
 
     @property
     def registryImagePath(self):
-        repository = self.project_namespace
+        repository = self.repository
         if self.opt['--use-registry']=="harbor":         
            return '%s/%s' % (repository, self.opt['--image-name'] if self.opt['--image-name'] else self.project_name)
        
-        return repository + "/" + self.opt['--image-name'] if self.opt['--image-name']  else self.repository 
+        return repository.rsplit('/',1)[0] + "/" + self.opt['--image-name'] if self.opt['--image-name']  else self.repository 
 
     @property
     def project_name(self):

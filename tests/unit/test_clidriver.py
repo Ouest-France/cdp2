@@ -538,7 +538,7 @@ services:
         os.environ['CI_REGISTRY_IMAGE'] = TestCliDriver.ci_registry_image
         os.environ['CI_PROJECT_ID'] = TestCliDriver.ci_project_id
         os.environ['CI_PROJECT_NAME'] = TestCliDriver.ci_project_name
-        os.environ['CI_PROJECT_NAMESPACE'] = TestCliDriver.ci_project_namespace
+        os.environ['CI_PROJECT_NAMESPACE'] = TestCliDriver.ci_project_name
         os.environ['CI_PROJECT_PATH'] = TestCliDriver.ci_project_path
         os.environ['CI_PROJECT_PATH_SLUG'] = TestCliDriver.ci_project_path_slug
         os.environ['CI_DEPLOY_USER'] = TestCliDriver.ci_deploy_user
@@ -623,8 +623,8 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build -t %s/%s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_namespace,TestCliDriver.ci_project_name,TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
-            {'cmd': 'podman push %s/%s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_namespace,TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            
+            {'cmd': 'podman build -t %s/%s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name,TestCliDriver.ci_project_name,TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
+            {'cmd': 'podman push %s/%s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name,TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--sleep=%s' % sleep },
@@ -640,8 +640,8 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build -t %s/%s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_namespace,"monimage",TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
-            {'cmd': 'podman push %s/%s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_namespace,"monimage", TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            
+            {'cmd': 'podman build -t %s/%s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name,"monimage",TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
+            {'cmd': 'podman push %s/%s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name,"monimage", TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--image-name=monimage','--sleep=%s' % sleep },
@@ -676,11 +676,11 @@ services:
           verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./distribution/php7-fpm/Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build -t %s:%s -f %s %s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_namespace.lower() + "/php",  TestCliDriver.ci_commit_ref_slug,"./distribution/php7-fpm/Dockerfile","./distribution/php7-fpm"), 'output': 'unnecessary'},
-            {'cmd': 'podman push %s:%s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_namespace.lower() + "/php",  TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            
+            {'cmd': 'podman build -t %s:%s -f %s %s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name.lower() + "/php",  TestCliDriver.ci_commit_ref_slug,"./distribution/php7-fpm/Dockerfile","./distribution/php7-fpm"), 'output': 'unnecessary'},
+            {'cmd': 'podman push %s:%s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name.lower() + "/php",  TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},            
             {'cmd': 'hadolint ./distribution/nginx/Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build -t %s:%s -f %s %s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_namespace.lower() + "/nginx",  TestCliDriver.ci_commit_ref_slug,"./distribution/nginx/Dockerfile","./distribution/nginx"), 'output': 'unnecessary'},
-            {'cmd': 'podman push %s:%s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_namespace.lower() + "/nginx",  TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'}
+            {'cmd': 'podman build -t %s:%s -f %s %s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name.lower() + "/nginx",  TestCliDriver.ci_commit_ref_slug,"./distribution/nginx/Dockerfile","./distribution/nginx"), 'output': 'unnecessary'},
+            {'cmd': 'podman push %s:%s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name.lower() + "/nginx",  TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'}
           ]
           self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor',"--build-file=cdp-build-file.yml"}, verif_cmd)
 
@@ -713,8 +713,8 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build -t %s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_namespace + "/" + TestCliDriver.ci_project_name, "test"), 'output': 'unnecessary'},
-            {'cmd': 'podman push %s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_namespace + "/" + TestCliDriver.ci_project_name, "test"), 'output': 'unnecessary'}
+            {'cmd': 'podman build -t %s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name, "test"), 'output': 'unnecessary'},
+            {'cmd': 'podman push %s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name, "test"), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--image-tag=test' }, verif_cmd)
 
@@ -834,7 +834,7 @@ services:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -842,6 +842,9 @@ services:
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_registry,
+                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.ci_registry,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_ref_slug,
@@ -908,7 +911,7 @@ services:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -916,6 +919,9 @@ services:
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_registry,
+                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.ci_registry,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_ref_slug,
@@ -987,7 +993,7 @@ services:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -995,6 +1001,9 @@ services:
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_registry,
+                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.ci_registry,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_ref_slug,
@@ -1060,7 +1069,7 @@ services:
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [TestCliDriver.tiller_not_found], 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
-                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --name=%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --name=%s --namespace=%s > %s/all_resources.tmp'
                         % (
                            deploy_spec_dir,
                            namespace,
@@ -1068,6 +1077,9 @@ services:
                            TestCliDriver.cdp_dns_subdomain,
                            TestCliDriver.cdp_dns_subdomain,
                            TestCliDriver.ci_commit_sha[:8],
+                           TestCliDriver.ci_registry,
+                           TestCliDriver.ci_project_path.lower(),
+                           TestCliDriver.ci_commit_ref_slug,
                            TestCliDriver.ci_registry,
                            TestCliDriver.ci_project_path.lower(),
                            TestCliDriver.ci_commit_ref_slug,
@@ -1130,7 +1142,7 @@ services:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -1138,6 +1150,9 @@ services:
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_registry,
+                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.ci_registry,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_ref_slug,
@@ -1198,7 +1213,7 @@ services:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set ingress.tlsSecretName=%s --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set ingress.tlsSecretName=%s --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -1206,6 +1221,9 @@ services:
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_registry,
+                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.ci_registry,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_ref_slug,
@@ -1265,7 +1283,7 @@ services:
             verif_cmd = [
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullImagePath=ouestfrance/cdp:latest --set image.pullPolicy=Always --set ingress.tlsSecretName=%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=ouestfrance/cdp:latest --set image.pullPolicy=Always --set ingress.tlsSecretName=%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -1283,7 +1301,7 @@ services:
                         final_deploy_spec_dir,
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
             ]
-            self.__run_CLIDriver({ 'k8s', '--full-image-path=ouestfrance/cdp:latest', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--image-fullname=ouestfrance/cdp:latest', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
                 env_vars = {'CDP_INGRESS_TLSSECRETNAME': TestCliDriver.ingress_tlsSecretName, 'CI_RUNNER_TAGS': 'test, staging', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1328,7 +1346,7 @@ services:
                 {'cmd': 'echo "  KEY: \'value 1\'" >> charts/templates/cdp-gitlab-secret.yaml', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -1336,6 +1354,9 @@ services:
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_registry,
+                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.ci_registry,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_ref_slug,
@@ -1401,7 +1422,7 @@ services:
                 {'cmd': 'echo "  KEY: \'value 1\'" >> charts/templates/cdp-gitlab-secret-hook.yaml', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                            % (release,
                               deploy_spec_dir,
                               namespace,
@@ -1409,6 +1430,9 @@ services:
                               TestCliDriver.cdp_dns_subdomain_staging,
                               TestCliDriver.cdp_dns_subdomain_staging,
                               TestCliDriver.ci_commit_sha[:8],
+                              TestCliDriver.ci_registry,
+                              TestCliDriver.ci_project_path.lower(),
+                              TestCliDriver.ci_commit_ref_slug,
                               TestCliDriver.ci_registry,
                               TestCliDriver.ci_project_path.lower(),
                               TestCliDriver.ci_commit_ref_slug,
@@ -1478,7 +1502,7 @@ services:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -1486,6 +1510,9 @@ services:
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.cdp_custom_registry,
+                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_custom_registry,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_ref_slug,
@@ -1545,7 +1572,7 @@ services:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -1553,6 +1580,9 @@ services:
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.cdp_custom_registry,
+                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_custom_registry,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_ref_slug,
@@ -1612,7 +1642,7 @@ services:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -1621,7 +1651,10 @@ services:
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.ci_commit_sha[:8],
                         TestCliDriver.cdp_harbor_registry,
-                        TestCliDriver.ci_project_namespace + "/" + TestCliDriver.ci_project_name,
+                        TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name,
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.cdp_harbor_registry,
+                        TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name,
                         TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_harbor_registry_user,
                         TestCliDriver.cdp_harbor_registry_read_only_token,
@@ -1685,7 +1718,7 @@ services:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -1694,7 +1727,10 @@ services:
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.ci_commit_sha[:8],
                         TestCliDriver.cdp_harbor_registry,
-                        TestCliDriver.ci_project_namespace + "/" + TestCliDriver.ci_project_name,
+                        TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name,
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.cdp_harbor_registry,
+                        TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name,
                         TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_harbor_registry_user,
                         TestCliDriver.cdp_harbor_registry_read_only_token,
@@ -1759,7 +1795,7 @@ services:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -1768,7 +1804,10 @@ services:
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.ci_commit_sha[:8],
                         TestCliDriver.cdp_harbor_registry,
-                        TestCliDriver.ci_project_namespace + '/monimage',
+                        TestCliDriver.ci_project_name + '/monimage',
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.cdp_harbor_registry,
+                        TestCliDriver.ci_project_name + '/monimage',
                         TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_harbor_registry_user,
                         TestCliDriver.cdp_harbor_registry_read_only_token,
@@ -1834,7 +1873,7 @@ services:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/values-php.yaml --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/values-php.yaml --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -1843,7 +1882,10 @@ services:
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.ci_commit_sha[:8],
                         TestCliDriver.cdp_harbor_registry,
-                        TestCliDriver.ci_project_namespace + '/monimage',
+                        TestCliDriver.ci_project_name + '/monimage',
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.cdp_harbor_registry,
+                        TestCliDriver.ci_project_name + '/monimage',
                         TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_harbor_registry_user,
                         TestCliDriver.cdp_harbor_registry_read_only_token,
@@ -1908,7 +1950,7 @@ services:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -1917,7 +1959,10 @@ services:
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.ci_commit_sha[:8],
                         TestCliDriver.cdp_harbor_registry,
-                        TestCliDriver.ci_project_namespace + "/" + TestCliDriver.ci_project_name,
+                        TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name,
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.cdp_harbor_registry,
+                        TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name,
                         TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_harbor_registry_user,
                         TestCliDriver.cdp_harbor_registry_read_only_token,
@@ -1983,7 +2028,7 @@ services:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -1992,7 +2037,10 @@ services:
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.ci_commit_sha[:8],
                         TestCliDriver.cdp_harbor_registry,
-                        TestCliDriver.ci_project_namespace + "/" + TestCliDriver.ci_project_name,
+                        TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name,
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.cdp_harbor_registry,
+                        TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name,
                         TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_harbor_registry_user,
                         TestCliDriver.cdp_harbor_registry_read_only_token,
@@ -2038,8 +2086,8 @@ services:
         deploy_spec_dir = 'charts'
         prefix='prod'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
-        image_tag = "%s/%s:%s" % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_namespace + "/" + TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug)
-        dest_image_tag = "%s/%s:%s-%s" % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_namespace + "/" + TestCliDriver.ci_project_name, prefix, TestCliDriver.ci_commit_ref_slug)
+        image_tag = "%s/%s:%s" % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug)
+        dest_image_tag = "%s/%s:%s-%s" % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name, prefix, TestCliDriver.ci_commit_ref_slug)
         date_now = datetime.datetime.utcnow()
         deleteDuration=240
         self.fakeauths["auths"] = {}
@@ -2055,7 +2103,7 @@ services:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -2064,7 +2112,10 @@ services:
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.ci_commit_sha[:8],
                         TestCliDriver.cdp_harbor_registry,
-                        TestCliDriver.ci_project_namespace + "/" + TestCliDriver.ci_project_name,
+                        TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name,
+                        prefix+"-"+TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.cdp_harbor_registry,
+                        TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name,
                         prefix+"-"+TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_harbor_registry_user,
                         TestCliDriver.cdp_harbor_registry_read_only_token,
@@ -2110,10 +2161,10 @@ services:
         deploy_spec_dir = 'charts'
         prefix='prod'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
-        image_tag_php = "%s/%s/php:%s" % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_namespace, TestCliDriver.ci_commit_ref_slug)
-        dest_image_tag_php = "%s/%s/php:%s-%s" % (TestCliDriver.cdp_harbor_registry,  TestCliDriver.ci_project_namespace, prefix, TestCliDriver.ci_commit_ref_slug)
-        image_tag_nginx = "%s/%s/nginx:%s" % (TestCliDriver.cdp_harbor_registry,  TestCliDriver.ci_project_namespace, TestCliDriver.ci_commit_ref_slug)
-        dest_image_tag_nginx = "%s/%s/nginx:%s-%s" % (TestCliDriver.cdp_harbor_registry,  TestCliDriver.ci_project_namespace, prefix, TestCliDriver.ci_commit_ref_slug)
+        image_tag_php = "%s/%s/php:%s" % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug)
+        dest_image_tag_php = "%s/%s/php:%s-%s" % (TestCliDriver.cdp_harbor_registry,  TestCliDriver.ci_project_name, prefix, TestCliDriver.ci_commit_ref_slug)
+        image_tag_nginx = "%s/%s/nginx:%s" % (TestCliDriver.cdp_harbor_registry,  TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug)
+        dest_image_tag_nginx = "%s/%s/nginx:%s-%s" % (TestCliDriver.cdp_harbor_registry,  TestCliDriver.ci_project_name, prefix, TestCliDriver.ci_commit_ref_slug)
         date_now = datetime.datetime.utcnow()
         deleteDuration=240
         self.fakeauths["auths"] = {}
@@ -2131,7 +2182,7 @@ services:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -2140,7 +2191,10 @@ services:
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.ci_commit_sha[:8],
                         TestCliDriver.cdp_harbor_registry,
-                        TestCliDriver.ci_project_namespace+ "/" + TestCliDriver.ci_project_name,
+                        TestCliDriver.ci_project_name+ "/" + TestCliDriver.ci_project_name,
+                        prefix+ "-" +TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.cdp_harbor_registry,
+                        TestCliDriver.ci_project_name+ "/" + TestCliDriver.ci_project_name,
                         prefix+ "-" +TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_harbor_registry_user,
                         TestCliDriver.cdp_harbor_registry_read_only_token,
@@ -2204,7 +2258,7 @@ services:
                 {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --values %s/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --values %s/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -2212,6 +2266,9 @@ services:
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.ci_commit_sha[:8],
+                        aws_host,
+                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_commit_sha,
                         aws_host,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_sha,
@@ -2275,7 +2332,7 @@ services:
                 {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set service.internalPort=8080 --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set service.internalPort=8080 --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -2283,6 +2340,9 @@ services:
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.ci_commit_sha[:8],
+                        aws_host,
+                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_commit_sha,
                         aws_host,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_sha,
@@ -2346,7 +2406,7 @@ services:
                 {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set service.internalPort=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set service.internalPort=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -2355,6 +2415,9 @@ services:
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.ci_commit_sha[:8],
+                        aws_host,
+                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_commit_sha,
                         aws_host,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_sha,
@@ -2409,7 +2472,7 @@ services:
                 {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
                 {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
-                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
                     % ( 
                         deploy_spec_dir,
                         namespace,
@@ -2417,6 +2480,9 @@ services:
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.ci_commit_sha[:8],
+                        aws_host,
+                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_commit_sha,
                         aws_host,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_sha,
@@ -2471,7 +2537,7 @@ services:
                 {'cmd': '/cdp/scripts/migrate_helm.sh -n %s -r %s' % ( namespace, release ), 'output': 'unnecessarry','throw':OSError(1,'effectuee')},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -2479,6 +2545,9 @@ services:
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.ci_commit_sha[:8],
+                        aws_host,
+                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_commit_sha,
                         aws_host,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_sha,
@@ -2534,7 +2603,7 @@ services:
                     {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
                     {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.tiller_found ], 'docker_image': TestCliDriver.image_name_kubectl},
                     {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
-                    {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
+                    {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
                         % ( 
                             deploy_spec_dir,
                             namespace,
@@ -2542,6 +2611,9 @@ services:
                             TestCliDriver.cdp_dns_subdomain,
                             TestCliDriver.cdp_dns_subdomain,
                             TestCliDriver.ci_commit_sha[:8],
+                            aws_host,
+                            TestCliDriver.ci_project_path.lower(),
+                            TestCliDriver.ci_commit_sha,
                             aws_host,
                             TestCliDriver.ci_project_path.lower(),
                             TestCliDriver.ci_commit_sha,
@@ -2598,7 +2670,7 @@ services:
                  {'cmd': 'skopeo copy docker://%s docker://%s'  % (image_tag, dest_image_tag), 'output': 'unnecessary'},
                  {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from': 'k8s', 'output': [TestCliDriver.tiller_found], 'docker_image': TestCliDriver.image_name_kubectl},
                  {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
-                 {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
+                 {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
                          % (
                             deploy_spec_dir,
                             namespace,
@@ -2606,6 +2678,9 @@ services:
                             TestCliDriver.cdp_dns_subdomain,
                             TestCliDriver.cdp_dns_subdomain,
                             TestCliDriver.ci_commit_sha[:8],
+                            aws_host,
+                            TestCliDriver.ci_project_path.lower(),
+                            prefix + "-" + TestCliDriver.ci_commit_sha,
                             aws_host,
                             TestCliDriver.ci_project_path.lower(),
                             prefix + "-" + TestCliDriver.ci_commit_sha,
@@ -2662,7 +2737,7 @@ services:
                 {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.tiller_found ], 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
-                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
                     % ( 
                         deploy_spec_dir,
                         namespace,
@@ -2670,6 +2745,9 @@ services:
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.ci_commit_sha[:8],
+                        aws_host,
+                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_commit_sha,
                         aws_host,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_sha,
