@@ -776,7 +776,7 @@ class CLIDriver(object):
 
         # Default image if no build file
         images_to_build = [ {"composant": "image", "dockerfile" : "Dockerfile","context": self._context.opt['--build-context'],"image": self.__getImageTag(image, tag)}]
-        if os.path.isfile(self._context.opt['--build-file']):
+        if self.__isMultiBuildContext():
            images_to_build = []
            with open(self._context.opt['--build-file']) as chartyml:
                  data = yaml.load(chartyml)
@@ -785,9 +785,15 @@ class CLIDriver(object):
                      images_to_build.append({"composant": service, "dockerfile" : servicedef["build"]["dockerfile"],"context": servicedef["build"]["context"], "image": envsubst(servicedef["image"])})
         return images_to_build
 
+    def __isMultiBuildContext(self):
+        return os.path.isfile(self._context.opt['--build-file'])
+
     def __getImageName(self):
         # Configure docker registry
-        image_name = '%s/%s' % (self._context.registry, self._context.registryImagePath)
+        if self.__isMultiBuildContext():
+          image_name = '%s/%s' % (self._context.registry, self._context.repository)
+        else:
+          image_name = '%s/%s' % (self._context.registry, self._context.registryImagePath)
         if self._context.opt['--docker-build-target']:
            image_name = '%s/%s' % (image_name, self._context.opt['--docker-build-target'])
         return image_name
