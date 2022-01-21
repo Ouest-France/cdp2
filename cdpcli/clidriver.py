@@ -771,12 +771,12 @@ class CLIDriver(object):
     def __getImagesToBuild(self,image, tag):
 
         os.environ['CDP_TAG'] = tag
-        os.environ['CDP_REGISTRY'] = '%s/%s' % (self._context.registry, self._context.repository)
+        os.environ['CDP_REGISTRY'] = "%s/%s" % (self._context.registry, self._context.registryImagePath)
         os.environ['CDP_IMAGE_PATH'] = image
 
         # Default image if no build file
         images_to_build = [ {"composant": "image", "dockerfile" : "Dockerfile","context": self._context.opt['--build-context'],"image": self.__getImageTag(image, tag)}]
-        if self.__isMultiBuildContext():
+        if self._context.isMultiBuildContext():
            images_to_build = []
            with open(self._context.opt['--build-file']) as chartyml:
                  data = yaml.load(chartyml)
@@ -785,15 +785,9 @@ class CLIDriver(object):
                      images_to_build.append({"composant": service, "dockerfile" : servicedef["build"]["dockerfile"],"context": servicedef["build"]["context"], "image": envsubst(servicedef["image"])})
         return images_to_build
 
-    def __isMultiBuildContext(self):
-        return os.path.isfile(self._context.opt['--build-file'])
-
     def __getImageName(self):
         # Configure docker registry
-        if self.__isMultiBuildContext():
-          image_name = '%s/%s' % (self._context.registry, self._context.repository)
-        else:
-          image_name = '%s/%s' % (self._context.registry, self._context.registryImagePath)
+        image_name = '%s/%s' % (self._context.registry, self._context.registryImagePath)
         if self._context.opt['--docker-build-target']:
            image_name = '%s/%s' % (image_name, self._context.opt['--docker-build-target'])
         return image_name

@@ -1860,7 +1860,7 @@ services:
         deleteDuration=240
         self.fakeauths["auths"] = {}
         mock_makedirs.maxDiff = None
-        mock_isfile.side_effect = [False, False, True]
+        mock_isfile.side_effect = [False, False,True, False,False, False]
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
         #m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
@@ -2147,7 +2147,7 @@ services:
     @patch("cdpcli.clidriver.yaml.dump_all")
     @patch('cdpcli.clidriver.os.path.isfile', return_value=True)    
     @freeze_time("2019-06-25 11:55:27")
-    def test_k8s_harbor_forcebyenvnamespaceprojectname_values_multi_build_with_prefix(self, mock_multi_build, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
+    def test_k8s_harbor_forcebyenvnamespaceprojectname_values_multi_build_with_prefix(self, mock_is_file, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
         #Get Mock
         mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab)
 
@@ -2191,10 +2191,10 @@ services:
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.ci_commit_sha[:8],
                         TestCliDriver.cdp_harbor_registry,
-                        TestCliDriver.ci_project_name+ "/" + TestCliDriver.ci_project_name,
+                        TestCliDriver.ci_project_name,
                         prefix+ "-" +TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_harbor_registry,
-                        TestCliDriver.ci_project_name+ "/" + TestCliDriver.ci_project_name,
+                        TestCliDriver.ci_project_name, 
                         prefix+ "-" +TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_harbor_registry_user,
                         TestCliDriver.cdp_harbor_registry_read_only_token,

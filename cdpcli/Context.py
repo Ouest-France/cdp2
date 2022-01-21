@@ -102,10 +102,16 @@ class Context(object):
     @property
     def registryImagePath(self):
         repository = self.repository
+        if self.isMultiBuildContext():
+            return repository
+
         if self.opt['--use-registry']=="harbor":         
            return '%s/%s' % (repository, self.opt['--image-name'] if self.opt['--image-name'] else self.project_name)
        
         return repository.rsplit('/',1)[0] + "/" + self.opt['--image-name'] if self.opt['--image-name']  else self.repository 
+
+    def isMultiBuildContext(self):
+        return os.path.isfile(self.opt['--build-file'])
 
     @property
     def project_name(self):
