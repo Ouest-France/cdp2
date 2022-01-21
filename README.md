@@ -270,18 +270,18 @@ deploy_staging:
 You can build multiple images in one command by creating a cdp-build-file.yml file in the root of your project. 
 This file follows the same description as the docker-compose.yml files
 
-CDP_REGISTRY,CDP_IMAGE_PATH and CDP_TAG environment variables are automatically set by CDP and refer to the path of repository, the current built image and the tag issued from --image-tagx options.
+CDP_REGISTRY_PATH,CDP_REGISTRY, CDP_IMAGE, CDP_IMAGE_PATH and CDP_TAG environment variables are automatically set by CDP and refer to the registry, the path of repository, the current built image and the tag issued from --image-tagx options.
 
 ```yaml
 version: '3'
 services:
   nginx:
-    image: ${CDP_REGISTRY:-local}/my-nginx-project-name:${CDP_TAG:-latest}
+    image: ${CDP_REGISTRY_PATH:-local}/${CDP_REPOSITORY:-local}/my-nginx-project-name:${CDP_TAG:-latest}
     build:
       context: ./distribution/nginx
       dockerfile: Dockerfile
   php:
-    image: ${CDP_REGISTRY:-local}/my-php-project-name:${CDP_TAG:-latest}
+    image: ${CDP_REGISTRY_PATH:-local}/${CDP_REPOSITORY:-local}/my-php-project-name:${CDP_TAG:-latest}
     build:
       context: ./distribution/php7-fpm
       dockerfile: Dockerfile
@@ -299,6 +299,9 @@ ingress.subdomain:       Only DNS subdomain, based on this environment variable 
 image.commit.sha:        First 8 characters of sha1 corresponding to the current commit.
 image.registry:          Docker image registry, based on the following options: [ --use-registry=gitlab | --use-registry=aws-ecr | --use-registry=<registry_name> ]
 image.repository:        Name of the repository corresponding to the CI_PROJECT_PATH environment variable in lowercase.
+image.repository_path:   Name of the repository.
+image.name:              Name of the image to use.
+image.fullname:          Full name of the image to use (registry/repository_path/image).
 image.tag:               Docker image tag, based on the following options: [ --image-tag-branch | --image-tag-latest | --image-tag-sha1 ]
 image.pullPolicy:        Docker pull policy, based on the following options: [ --image-tag-branch | --image-tag-latest | --image-tag-sha1 ]
 image.imagePullSecrets:  If --image-pull-secret option is set, we add this value to be used in the chart to avoid patch + rollout.
@@ -313,10 +316,10 @@ spec:
     spec:
       containers:
         - name: {{ template "nginx.name" . }}-{{ .Values.image.commit.sha }}
-          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}/my-nginx-project-name:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository_path }}/my-nginx-project-name:{{ .Values.image.tag }}"
           ...
         - name: {{ template "php.name" . }}-{{ .Values.image.commit.sha }}
-          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}/my-php-project-name:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository_path }}/my-php-project-name:{{ .Values.image.tag }}"
           ...
 ...
 ```
@@ -405,7 +408,7 @@ spec:
     spec:
       containers:
         - name: {{ template "nginx.name" . }}-{{ .Values.image.commit.sha }}
-          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}/my-nginx-project-name:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository_path }}/my-nginx-project-name:{{ .Values.image.tag }}"
         env:
         -name: "MY_GITLAB_SECRET"
          valueFrom:
@@ -444,7 +447,7 @@ spec:
     spec:
       containers:
         - name: {{ template "nginx.name" . }}-{{ .Values.image.commit.sha }}
-          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}/my-nginx-project-name:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository_path }}/my-nginx-project-name:{{ .Values.image.tag }}"
           volumeMounts:
            - name: foo
              mountPath: "/etc/foo"

@@ -311,9 +311,9 @@ class CLIDriver(object):
             repos = []
 
             if self._context.opt['--use-docker'] or not (self._context.opt['--use-docker-compose']) and not (self._context.opt['--docker-build-target']):
-                repos.append(self._context.repository)
+                repos.append(self._context.repository + "/" + self._context.image_name)
             elif (self._context.opt['--docker-build-target']):
-                repos.append('%s/%s' % (self._context.repository, self._context.opt['--docker-build-target']))
+                repos.append('%s/%s/%s' % (self._context.repository, self._context.image_name, self._context.opt['--docker-build-target']))
             elif self._context.opt['--use-docker-compose']:
                  sys.exit("\x1b[31;1mERROR : docker-compose is deprecated.\x1b[0m")
             for repo in repos:
@@ -480,6 +480,8 @@ class CLIDriver(object):
         if (self._context.opt['--image-fullname']):
           set_command = '%s --set image.fullname=%s' % (set_command,self._context.opt['--image-fullname'] )
         else:
+           set_command = '%s --set image.name=%s' % (set_command, self._context.image_name)
+           set_command = '%s --set image.repository_path=%s' % (set_command, self._context.repository)
            set_command = '%s --set image.fullname=%s/%s:%s' % (set_command, self._context.registry, self._context.registryImagePath, tag)
            set_command = '%s --set image.registry=%s' % (set_command,  self._context.registry)
            set_command = '%s --set image.repository=%s' % (set_command, self._context.registryImagePath)
@@ -750,9 +752,9 @@ class CLIDriver(object):
 
     def __callArtifactoryFile(self, tag, upload_file, http_verb):
         if http_verb == 'PUT':
-            self._cmd.run_command('curl --fail -X PUT %s/%s/%s/ -H X-JFrog-Art-Api:%s -T %s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, os.environ['CDP_ARTIFACTORY_TOKEN'], upload_file))
+            self._cmd.run_command('curl --fail -X PUT %s/%s/%s/%s/ -H X-JFrog-Art-Api:%s -T %s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, self._context.image_name, tag, os.environ['CDP_ARTIFACTORY_TOKEN'], upload_file))
         elif http_verb == 'DELETE':
-            self._cmd.run_command('curl --fail -X DELETE %s/%s/%s/%s -H X-JFrog-Art-Api:%s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, upload_file, os.environ['CDP_ARTIFACTORY_TOKEN']))
+            self._cmd.run_command('curl --fail -X DELETE %s/%s/%s/%s/%s -H X-JFrog-Art-Api:%s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, self._context.image_name, tag, upload_file, os.environ['CDP_ARTIFACTORY_TOKEN']))
 
     def __validator(self):
         url = 'https://%s/%s' % (self.__getHost(), self._context.opt['--path'])
@@ -772,6 +774,9 @@ class CLIDriver(object):
 
         os.environ['CDP_TAG'] = tag
         os.environ['CDP_REGISTRY'] = "%s/%s" % (self._context.registry, self._context.registryImagePath)
+        os.environ['CDP_REGISTRY_PATH'] = "%s" % (self._context.registry)
+        os.environ['CDP_REPOSITORY'] = "%s" % (self._context.repository)
+        os.environ['CDP_IMAGE'] = "%s" % (self._context.image_name)
         os.environ['CDP_IMAGE_PATH'] = image
 
         # Default image if no build file
@@ -786,10 +791,7 @@ class CLIDriver(object):
         return images_to_build
 
     def __getImageName(self):
-        # Configure docker registry
         image_name = '%s/%s' % (self._context.registry, self._context.registryImagePath)
-        if self._context.opt['--docker-build-target']:
-           image_name = '%s/%s' % (image_name, self._context.opt['--docker-build-target'])
         return image_name
 
     def __getImageTag(self, image_name, tag):
