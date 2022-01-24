@@ -18,7 +18,7 @@ Usage:
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-gitlab-registry] [--use-aws-ecr] [--use-custom-registry] [--use-registry=<registry_name>]
         [--use-docker | --use-docker-compose]
-        [--image-name=<image_name>]
+        [--image-name=<image_name>] [--image-repository=<repository>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
         [--build-context=<path>]
         [--build-arg=<arg> ...]
@@ -31,7 +31,7 @@ Usage:
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-gitlab-registry] [--use-aws-ecr] [--use-custom-registry] [--use-registry=<registry_name>] 
         [--helm-version=<version>]
-        [--image-name=<image_name>] [--full-image-path=<registry/repository/image:tag>]
+        [--image-name=<image_name>] [--image-repository=<repository>] [--full-image-path=<registry/repository/image:tag>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>] 
         [--image-prefix-tag=<tag>]
         [(--create-gitlab-secret)]
@@ -39,15 +39,15 @@ Usage:
         [(--use-docker-compose)] 
         [--build-file=<buildFile>]
         [--values=<files>]
-        [--delete-labels=<minutes>]
+        [--delete-labels=<minutes>|--release-ttl=<minutes>]
         [--namespace-project-name | --namespace-name=<namespace_name> ] [--namespace-project-branch-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--helm-migration=[true|false]]
-        [--chart-repo=<repo>] [--use-chart=<chart:branch>]
+        [--chart-repo=<repo>] [--use-chart=<chart:branch>] [--chart-subtype=<subtype>]
         [--timeout=<timeout>]
         [--tiller-namespace]
         [--release-project-branch-name] [--release-project-env-name] [--release-project-name] [--release-shortproject-name] [--release-namespace-name] [--release-custom-name=<release_name>]
-        [--image-pull-secret] [--ingress-tlsSecretName=<secretName>]
+        [--image-pull-secret] [--ingress-tlsSecretName=<secretName>] [--ingress-tlsSecretNamespace=<secretNamespace>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
         [--volume-from=<host_type>]
@@ -69,12 +69,12 @@ Options:
     --build-file=<buildFile>                                   Specify the file to build multiples images [default: cdp-build-file.yml].
     --chart-repo=<repo>                                        Path of the repository of default charts
     --use-chart=<chart:branch>                                 Name of the pre-defined chart to use. Format : name or name:branch
+    --chart-subtype=<subtype>                                  Subtype of chart if needed. Allowed values : php
     --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
     --conftest-namespaces=<namespaces>                         Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACES is used if empty.
     --create-default-helm                                      Create default helm for simple project (One docker image).
     --create-gitlab-secret                                     Create a secret from gitlab env starting with CDP_SECRET_<Environnement>_ where <Environnement> is the gitlab env from the job ( or CI_ENVIRONNEMENT_NAME )
     --create-gitlab-secret-hook                                Create gitlab secret with hook
-    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
@@ -83,13 +83,15 @@ Options:
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --helm-version=<version>                                   Major version of Helm. [default: 3]
     --helm-migration=<true|false>                              Do helm 2 to Helm 3 migration
-    --image-name=<image_name>                                  Force the name of the image. Default is namespace name.
+    --image-repository=<repository>                            Force the name of the repository of the image. Default is Gitlab project path (or namespace for Harbor).
+    --image-name=<image_name>                                  Force the name of the image. Default is project name.
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
     --image-tag=<tag>                                          Tag name
     --image-prefix-tag=<tag>                                   Tag prefix for docker image.
     --ingress-tlsSecretName=<secretName>                       Name of the tls secret for ingress 
+    --ingress-tlsSecretNamespace=<secretNamespace>             Namespace of the tls secret    
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
@@ -98,6 +100,7 @@ Options:
     --no-conftest                                              Do not run conftest validation tests.
     --path=<path>                                              Path to validate [default: configurations].
     --put=<file>                                               Put file to artifactory.
+    --release-ttl=<minutes>                                    Set ttl (Time to live) time for the release. Will be removed after the time.
     --release-custom-name=<release_name>                       Customize release name with namespace-name-<release_name>
     --release-namespace-name                                   Force the release to be created with the namespace name. Same as --release-project-name if namespace-name option is not set. [default]
     --release-project-branch-name                              Force the release to be created with the project branch name.
@@ -128,6 +131,7 @@ Deprecated options:
     --use-docker-compose                                       Use docker-compose to build / push image / retag container [DEPRECATED]
     --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default]. [DEPRECATED]
     --volume-from=<host_type>                                  Volume type of sources - docker, k8s, local or docker volume description (dir:mount) [DEPRECATED] 
+    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup. use --release-ttl instead [DEPRECATED] 
 ```
 ### _Prerequisites_
 
@@ -266,18 +270,18 @@ deploy_staging:
 You can build multiple images in one command by creating a cdp-build-file.yml file in the root of your project. 
 This file follows the same description as the docker-compose.yml files
 
-CDP_REGISTRY and CDP_TAG environment variables are automatically set by CDP and refer to the path of the current built image and the tag issued from --image-tagx options.
+CDP_REGISTRY_PATH,CDP_REGISTRY, CDP_IMAGE, CDP_IMAGE_PATH and CDP_TAG environment variables are automatically set by CDP and refer to the registry, the path of repository, the current built image and the tag issued from --image-tagx options.
 
 ```yaml
 version: '3'
 services:
   nginx:
-    image: ${CDP_REGISTRY:-local}/my-nginx-project-name:${CDP_TAG:-latest}
+    image: ${CDP_REGISTRY_PATH:-local}/${CDP_REPOSITORY:-local}/my-nginx-project-name:${CDP_TAG:-latest}
     build:
       context: ./distribution/nginx
       dockerfile: Dockerfile
   php:
-    image: ${CDP_REGISTRY:-local}/my-php-project-name:${CDP_TAG:-latest}
+    image: ${CDP_REGISTRY_PATH:-local}/${CDP_REPOSITORY:-local}/my-php-project-name:${CDP_TAG:-latest}
     build:
       context: ./distribution/php7-fpm
       dockerfile: Dockerfile
@@ -295,6 +299,9 @@ ingress.subdomain:       Only DNS subdomain, based on this environment variable 
 image.commit.sha:        First 8 characters of sha1 corresponding to the current commit.
 image.registry:          Docker image registry, based on the following options: [ --use-registry=gitlab | --use-registry=aws-ecr | --use-registry=<registry_name> ]
 image.repository:        Name of the repository corresponding to the CI_PROJECT_PATH environment variable in lowercase.
+image.repository_path:   Name of the repository.
+image.name:              Name of the image to use.
+image.fullname:          Full name of the image to use (registry/repository_path/image).
 image.tag:               Docker image tag, based on the following options: [ --image-tag-branch | --image-tag-latest | --image-tag-sha1 ]
 image.pullPolicy:        Docker pull policy, based on the following options: [ --image-tag-branch | --image-tag-latest | --image-tag-sha1 ]
 image.imagePullSecrets:  If --image-pull-secret option is set, we add this value to be used in the chart to avoid patch + rollout.
@@ -309,10 +316,10 @@ spec:
     spec:
       containers:
         - name: {{ template "nginx.name" . }}-{{ .Values.image.commit.sha }}
-          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}/my-nginx-project-name:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository_path }}/my-nginx-project-name:{{ .Values.image.tag }}"
           ...
         - name: {{ template "php.name" . }}-{{ .Values.image.commit.sha }}
-          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}/my-php-project-name:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository_path }}/my-php-project-name:{{ .Values.image.tag }}"
           ...
 ...
 ```
@@ -401,7 +408,7 @@ spec:
     spec:
       containers:
         - name: {{ template "nginx.name" . }}-{{ .Values.image.commit.sha }}
-          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}/my-nginx-project-name:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository_path }}/my-nginx-project-name:{{ .Values.image.tag }}"
         env:
         -name: "MY_GITLAB_SECRET"
          valueFrom:
@@ -440,7 +447,7 @@ spec:
     spec:
       containers:
         - name: {{ template "nginx.name" . }}-{{ .Values.image.commit.sha }}
-          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}/my-nginx-project-name:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository_path }}/my-nginx-project-name:{{ .Values.image.tag }}"
           volumeMounts:
            - name: foo
              mountPath: "/etc/foo"

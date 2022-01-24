@@ -96,15 +96,34 @@ class Context(object):
         return self.__verif_attr(self._registry_token_ro)
 
     @property
-    def repository(self):
-        return self.opt['--image-repository'] if self.opt['--image-repository'] else os.environ['CI_PROJECT_PATH'].lower()
+    def image_name(self):
+        # Configure docker registry
+        image_name = self.opt['--image-name'] if self.opt['--image-name'] else self.project_name
+        if self.opt['--docker-build-target']:
+           image_name = '%s/%s' % (image_name, self.opt['--docker-build-target'])
+        return image_name
 
     @property
+    def full_image_path(self):
+        return "%s/%s/%s" % (self.registry, self.repository, self.image_name)
+
+    @property
+    def repository(self):
+        return self.opt['--image-repository'] if self.opt['--image-repository'] else ( self.project_name if self.opt['--use-registry']=="harbor" else os.environ['CI_PROJECT_PATH'])
+
+    @property
+    # Retourne le repo + le nom de l'image
+    # Dans le cas d'un multi-build, ne retourne que le repo pour retrocompatibilité 
     def registryImagePath(self):
-        if self.opt['--use-registry']=="harbor":         
-           return '%s/%s' % (self.opt['--image-repository'] if self.opt['--image-repository'] else self.project_name, self.opt['--image-name'] if self.opt['--image-name'] else self.project_name)
+        repository = self.repository
+        if self.isMultiBuildContext():
+            return repository
+
+        return '%s/%s' % (repository, self.image_name)
        
-        return os.environ['CI_PROJECT_NAMESPACE'].lower() + "/" + self.opt['--image-name'] if self.opt['--image-name']  else self.repository 
+
+    def isMultiBuildContext(self):
+        return os.path.isfile(self.opt['--build-file'])
 
     @property
     def project_name(self):
