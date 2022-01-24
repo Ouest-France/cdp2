@@ -105,11 +105,11 @@ class Context(object):
 
     @property
     def full_image_path(self):
-        return "%s§/%s/%s" % (self.registry, self.repository, self.image_name)
+        return "%s/%s/%s" % (self.registry, self.repository, self.image_name)
 
     @property
     def repository(self):
-        return self.opt['--image-repository'] if self.opt['--image-repository'] else ( self.project_name if self.opt['--use-registry']=="harbor" else os.environ['CI_PROJECT_NAMESPACE'].lower())
+        return self.opt['--image-repository'] if self.opt['--image-repository'] else ( self.project_name if self.opt['--use-registry']=="harbor" else os.environ['CI_PROJECT_PATH'])
 
     @property
     # Retourne le repo + le nom de l'image
