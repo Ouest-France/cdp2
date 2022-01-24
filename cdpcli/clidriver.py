@@ -26,7 +26,7 @@ Usage:
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-gitlab-registry] [--use-aws-ecr] [--use-custom-registry] [--use-registry=<registry_name>] 
         [--helm-version=<version>]
-        [--image-name=<image_name>] [--image-repository=<repository>] [--image-fullname=<registry/repository/image:tag>]
+        [--image-name=<image_name>] [--image-repository=<repository>] [--full-image-path=<registry/repository/image:tag>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>] 
         [--image-prefix-tag=<tag>]
         [(--create-gitlab-secret)]
@@ -34,7 +34,7 @@ Usage:
         [(--use-docker-compose)] 
         [--build-file=<buildFile>]
         [--values=<files>]
-        [--delete-labels=<minutes>|--release-ttl=<minutes>]
+        [--delete-labels=<minutes>]
         [--namespace-project-name | --namespace-name=<namespace_name> ] [--namespace-project-branch-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--helm-migration=[true|false]]
@@ -42,7 +42,7 @@ Usage:
         [--timeout=<timeout>]
         [--tiller-namespace]
         [--release-project-branch-name] [--release-project-env-name] [--release-project-name] [--release-shortproject-name] [--release-namespace-name] [--release-custom-name=<release_name>]
-        [--image-pull-secret] [--ingress-tlsSecretName=<secretName>] [--ingress-tlsSecretNamespace=<secretNamespace>]
+        [--image-pull-secret] [--ingress-tlsSecretName=<secretName>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
         [--volume-from=<host_type>]
@@ -70,6 +70,7 @@ Options:
     --create-default-helm                                      Create default helm for simple project (One docker image).
     --create-gitlab-secret                                     Create a secret from gitlab env starting with CDP_SECRET_<Environnement>_ where <Environnement> is the gitlab env from the job ( or CI_ENVIRONNEMENT_NAME )
     --create-gitlab-secret-hook                                Create gitlab secret with hook
+    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
@@ -78,16 +79,14 @@ Options:
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --helm-version=<version>                                   Major version of Helm. [default: 3]
     --helm-migration=<true|false>                              Do helm 2 to Helm 3 migration
-    --image-repository=<repository>                            Force the name of the repository of the image. Default is Gitlab project path (or namespace for Harbor).
-    --image-name=<image_name>                                  Force the name of the image. Default is project name.
-    --image-fullname=<registry/repository/image:tag>           Use full image name overriding path calculated by CDP
+    --image-repository=<repository>                            Force the name of the repository of the image. Default is Gitlab project path (ou project_name for Harbor).
+    --image-name=<image_name>                                  Force the name of the image. Default is namespace name.
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
     --image-tag=<tag>                                          Tag name
     --image-prefix-tag=<tag>                                   Tag prefix for docker image.
     --ingress-tlsSecretName=<secretName>                       Name of the tls secret for ingress 
-    --ingress-tlsSecretNamespace=<secretNamespace>             Namespace of the tls secret    
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
@@ -96,7 +95,6 @@ Options:
     --no-conftest                                              Do not run conftest validation tests.
     --path=<path>                                              Path to validate [default: configurations].
     --put=<file>                                               Put file to artifactory.
-    --release-ttl=<minutes>                                    Set ttl (Time to live) time for the release. Will be removed after the time.
     --release-custom-name=<release_name>                       Customize release name with namespace-name-<release_name>
     --release-namespace-name                                   Force the release to be created with the namespace name. Same as --release-project-name if namespace-name option is not set. [default]
     --release-project-branch-name                              Force the release to be created with the project branch name.
@@ -108,6 +106,7 @@ Options:
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
     --use-docker                                               Use docker to build / push image [default].
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
+    --full-image-path=<registry/repository/image:tag>          Use full image path overriding path calculated by CDP
     --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
 Deprecated options:
@@ -126,7 +125,6 @@ Deprecated options:
     --use-docker-compose                                       Use docker-compose to build / push image / retag container [DEPRECATED]
     --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default]. [DEPRECATED]
     --volume-from=<host_type>                                  Volume type of sources - docker, k8s, local or docker volume description (dir:mount) [DEPRECATED] 
-    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup. use release-ttl instead [DEPRECATED] 
 """
 import base64
 import configparser
@@ -165,7 +163,7 @@ yaml.explicit_start = True
 
 def main():
     if len(sys.argv) > 1 and sys.argv[1] == "build":
-        sys.exit("\x1b[31;1mERROR : build command is deprecated\x1b[0m")
+        sys.exit("build command is deprecated")
 
     opt = docopt(__doc__, sys.argv[1:], version=__version__)
 
@@ -218,15 +216,11 @@ class CLIDriver(object):
             if (not opt['--namespace-project-name'] and opt['--namespace-name']):
                 opt["--namespace-project-name"] = True                      
 
-            if opt['--delete-labels']:
-                 LOG.warning("\x1b[31;1mWARN : Option --delete-labels is DEPRECATED and is replaced by --release-ttl\x1b[0m")
-                 opt["--release-ttl"] = opt['--delete-labels']
-
 
     def main(self, args=None):
         exclusiveReleaseOptions = ["--release-project-branch-name","--release-project-env-name","--release-project-name","--release-shortproject-name","--release-namespace-name","--release-custom-name"]            
         exclusiveRegistryOptions = ["--use-gitlab-registry","--use-aws-ecr","--use-custom-registry","--use-registry"]
-        exclusiveTagsOptions = ["--image-tag-branch-name","--image-tag-latest","--image-tag-sha1","--image-tag","--image-fullname"]
+        exclusiveTagsOptions = ["--image-tag-branch-name","--image-tag-latest","--image-tag-sha1","--image-tag","--full-image-path"]
         try:
             if self._context.opt['maven']:
                 self.check_runner_permissions("maven")
@@ -244,8 +238,6 @@ class CLIDriver(object):
                 self.check_runner_permissions("k8s")
                 self.check_mutually_exclusives_options(self._context.opt, exclusiveReleaseOptions, 0)
                 self.check_mutually_exclusives_options(self._context.opt, exclusiveTagsOptions, 0)
-                if (self._context.opt['--release-ttl'] and self._context.opt['--use-registry'] != 'gitlab' and self._context.opt['--use-registry'] != 'aws-ecr'):
-                    sys.exit("\x1b[31;1mERROR : k8s command with --release-ttl (or --delete-labels) flag can only be used vith gitlab or aws ecr registry\x1b[0m")
                 self.__k8s()
 
             if self._context.opt['conftest']:
@@ -311,11 +303,12 @@ class CLIDriver(object):
             repos = []
 
             if self._context.opt['--use-docker'] or not (self._context.opt['--use-docker-compose']) and not (self._context.opt['--docker-build-target']):
-                repos.append(self._context.repository + "/" + self._context.image_name)
+                repos.append(self._context.repository)
             elif (self._context.opt['--docker-build-target']):
-                repos.append('%s/%s/%s' % (self._context.repository, self._context.image_name, self._context.opt['--docker-build-target']))
+                repos.append('%s/%s' % (self._context.repository, self._context.opt['--docker-build-target']))
             elif self._context.opt['--use-docker-compose']:
-                 sys.exit("\x1b[31;1mERROR : docker-compose is deprecated.\x1b[0m")
+                 sys.exit('docker-compose is deprecated.')
+
             for repo in repos:
                 try:
                     aws_cmd.run('ecr list-images --repository-name %s --max-items 0' % repo)
@@ -342,7 +335,7 @@ class CLIDriver(object):
             upload_file = self._context.opt['--delete']
             http_verb = 'DELETE'
         else:
-            sys.exit("\x1b[31;1mERROR : Incorrect option with artifactory command.\x1b[0m")
+             sys.exit('Incorrect option with artifactory command.')
 
         # Tag and push docker image
         if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1'] or self._context.opt['--image-tag']) or self._context.opt['--image-tag-branch-name']:
@@ -374,14 +367,21 @@ class CLIDriver(object):
                pullPolicy = 'Always'
 
         # Gestion des prefix des tags pour la retention auto de Harbor            
+        prefixs = []
+        # Ajout systématique pour les releases tempo 
+        if self._context.opt['--delete-labels']:
+              prefixs.append("fb")
+
         prefix = self._context.getParamOrEnv("image-prefix-tag")
         if prefix:
+           prefixs.append(prefix)
+
+        if len(prefixs) > 0:
             # Apply prefix to all built images
             images = self.__getImagesToBuild(self.__getImageName(), tag)
             for image in images:
                 imagePath = image["image"].rsplit(':', 1)[0]
-                self.__addPrefixToTag(imagePath, tag, prefix)
-            tag = "%s-%s" % (prefix,tag)
+                self.__addPrefixToTag(imagePath, tag, prefixs)
             
         # Use release name instead of the namespace name for release
         release = self.__getRelease().replace('/', '-')
@@ -399,7 +399,7 @@ class CLIDriver(object):
               output = self._cmd.run_command('/cdp/scripts/migrate_helm.sh -n %s -r %s' % (namespace, release))            
            except OSError as e:            
               if e.errno > 1:
-                  sys.exit("\x1b[31;1mERROR : Migration to helm 3 of release %s has failed : %s\x1b[0m" % (release, str(e)))
+                  sys.exit('Migration to helm 3 of release %s has failed : %s' % (release, str(e)))
               if e.errno == 1:
                  cleanupHelm2 = True
 
@@ -416,7 +416,7 @@ class CLIDriver(object):
             os.makedirs('%s/templates' % self._context.opt['--deploy-spec-dir'],0o777, True)
             # Check that the chart dir no exists
             if os.path.isfile('%s/values.yaml' % self._context.opt['--deploy-spec-dir']):
-               sys.exit("\x1b[31;1mERROR : Filename values.yaml must not be used when --use-chart is set. Please rename to another name (Ex : values-common.yml)\x1b[0m")
+               sys.exit('ERROR - Filename %s/values.yaml must not be used when --use-chart is set. Please rename to another name (Ex : values-common.yml)' )
             else:
                 chartIsPresent = False
                 #Download predefined chart in a temporary directory
@@ -477,19 +477,13 @@ class CLIDriver(object):
         set_command = '%s --set ingress.host=%s' % (set_command, host)
         set_command = '%s --set ingress.subdomain=%s' % (set_command, os.getenv('CDP_DNS_SUBDOMAIN', None))
         set_command = '%s --set image.commit.sha=sha-%s' % (set_command, os.environ['CI_COMMIT_SHA'][:8])
-        if (self._context.opt['--image-fullname']):
-          set_command = '%s --set image.fullname=%s' % (set_command,self._context.opt['--image-fullname'] )
+        if (self._context.opt['--full-image-path']):
+          set_command = '%s --set image.fullImagePath=%s' % (set_command,self._context.opt['--full-image-path'] )
         else:
-           set_command = '%s --set image.name=%s' % (set_command, self._context.image_name)
-           set_command = '%s --set image.root_repository=%s' % (set_command, self._context.repository)
-           set_command = '%s --set image.fullname=%s/%s:%s' % (set_command, self._context.registry, self._context.registryImagePath, tag)
            set_command = '%s --set image.registry=%s' % (set_command,  self._context.registry)
            set_command = '%s --set image.repository=%s' % (set_command, self._context.registryImagePath)
            set_command = '%s --set image.tag=%s' % (set_command, tag)
         set_command = '%s --set image.pullPolicy=%s' % (set_command, pullPolicy)
-        tlsSecretNamespace = self._context.getParamOrEnv("ingress-tlsSecretNamespace")
-        if (tlsSecretNamespace):
-            set_command = '%s --set ingress.tlsSecretNamespace=%s' % (set_command, tlsSecretNamespace)
         tlsSecretName = self._context.getParamOrEnv("ingress-tlsSecretName")
         if (tlsSecretName):
             set_command = '%s --set ingress.tlsSecretName=%s' % (set_command, tlsSecretName)
@@ -530,8 +524,8 @@ class CLIDriver(object):
 
         now = datetime.datetime.utcnow()
         date_format = '%Y-%m-%dT%H%M%S'
-        if self._context.opt['--release-ttl']:
-            command = '%s --description deletionTimestamp=%sZ' % (command,(now + datetime.timedelta(minutes = int(self._context.opt['--release-ttl']))).strftime(date_format))
+        if self._context.opt['--delete-labels']:
+            command = '%s --description deletionTimestamp=%sZ' % (command,(now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format))
 
         # Template charts for secret
         tmp_templating_file = '%s/all_resources.tmp' % final_deploy_spec_dir
@@ -576,7 +570,7 @@ class CLIDriver(object):
                 if doc is not None:
                     # Ajout du label deletable sur tous les objets si la release est temporaire
                     if "metadata" in doc and "labels" in doc['metadata']:
-                       doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--release-ttl'] else "false"
+                       doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--delete-labels'] else "false"
 
                     final_docs.append(doc)
                     CLIDriver.addGitlabLabels(doc)
@@ -617,7 +611,7 @@ class CLIDriver(object):
         except OSError as e: 
           # Recuperation des events pour debuggage
           kubectl_cmd.run('get events --sort-by=.metadata.creationTimestamp --field-selector=type!=Normal|tail -10')
-          sys.exit("\x1b[31;1mERROR : cdp k8s aborted\x1b[0m")
+          sys.exit("cdp k8s aborted")
 
         # Tout s'est bien passé, on clean la release ou le namespace si dernière release
         if cleanupHelm2:
@@ -697,14 +691,15 @@ class CLIDriver(object):
                       doc['spec']['template']['metadata']['labels'][tag[0]] = tag[1]
         return doc
 
-    def __addPrefixToTag(self, image_repo, tag, prefix):
+    def __addPrefixToTag(self, image_repo, tag, prefixs):
       try:
-        prefixTag = "%s-%s" % (prefix, tag)
-        source_image_tag = self.__getImageTag(image_repo,  tag)
-        dest_image_tag = self.__getImageTag(image_repo, prefixTag)
-        LOG.info("Nouveau tag %s sur l'image %s" % (dest_image_tag, source_image_tag))
-        # Utilisation de Skopeo
-        self._cmd.run_command('skopeo copy docker://%s docker://%s' % (source_image_tag, dest_image_tag))
+        for prefix in prefixs:
+           prefixTag = "%s-%s" % (prefix, tag)
+           source_image_tag = self.__getImageTag(image_repo,  tag)
+           dest_image_tag = self.__getImageTag(image_repo, prefixTag)
+           LOG.info("Nouveau tag %s sur l'image %s" % (dest_image_tag, source_image_tag))
+           # Utilisation de Skopeo
+           self._cmd.run_command('skopeo copy docker://%s docker://%s' % (source_image_tag, dest_image_tag))
       except OSError as e:
                print('************************** SKPEO *******************************')
                print(e)
@@ -717,8 +712,7 @@ class CLIDriver(object):
         img_cmd = PodmanCommand(self._cmd)
         image_tag = self.__getImageTag(self.__getImageName(), tag)
         if self._context.opt['--use-docker-compose']:
-            sys.exit("\x1b[31;1mERROR : docker-compose is deprecated.\x1b[0m")
-
+              sys.exit('docker-compose is deprecated.')
         else:
           images_to_build = self.__getImagesToBuild(self.__getImageName(), tag)
           for image_to_build in images_to_build:
@@ -752,9 +746,9 @@ class CLIDriver(object):
 
     def __callArtifactoryFile(self, tag, upload_file, http_verb):
         if http_verb == 'PUT':
-            self._cmd.run_command('curl --fail -X PUT %s/%s/%s/%s/ -H X-JFrog-Art-Api:%s -T %s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, self._context.image_name, tag, os.environ['CDP_ARTIFACTORY_TOKEN'], upload_file))
+            self._cmd.run_command('curl --fail -X PUT %s/%s/%s/ -H X-JFrog-Art-Api:%s -T %s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, os.environ['CDP_ARTIFACTORY_TOKEN'], upload_file))
         elif http_verb == 'DELETE':
-            self._cmd.run_command('curl --fail -X DELETE %s/%s/%s/%s/%s -H X-JFrog-Art-Api:%s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, self._context.image_name, tag, upload_file, os.environ['CDP_ARTIFACTORY_TOKEN']))
+            self._cmd.run_command('curl --fail -X DELETE %s/%s/%s/%s -H X-JFrog-Art-Api:%s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, upload_file, os.environ['CDP_ARTIFACTORY_TOKEN']))
 
     def __validator(self):
         url = 'https://%s/%s' % (self.__getHost(), self._context.opt['--path'])
@@ -773,16 +767,11 @@ class CLIDriver(object):
     def __getImagesToBuild(self,image, tag):
 
         os.environ['CDP_TAG'] = tag
-        os.environ['CDP_REGISTRY'] = "%s/%s" % (self._context.registry, self._context.registryImagePath)
-        os.environ['CDP_REGISTRY_PATH'] = "%s" % (self._context.registry)
-        os.environ['CDP_ROOT_REPOSITORY'] = "%s" % (self._context.repository)
-        os.environ['CDP_REPOSITORY'] = "%s" % (self._context.registryImagePath)
-        os.environ['CDP_IMAGE'] = "%s" % (self._context.image_name)
-        os.environ['CDP_IMAGE_PATH'] = image
+        os.environ['CDP_REGISTRY'] = image
 
         # Default image if no build file
         images_to_build = [ {"composant": "image", "dockerfile" : "Dockerfile","context": self._context.opt['--build-context'],"image": self.__getImageTag(image, tag)}]
-        if self._context.isMultiBuildContext():
+        if os.path.isfile(self._context.opt['--build-file']):
            images_to_build = []
            with open(self._context.opt['--build-file']) as chartyml:
                  data = yaml.load(chartyml)
@@ -792,7 +781,10 @@ class CLIDriver(object):
         return images_to_build
 
     def __getImageName(self):
+        # Configure docker registry
         image_name = '%s/%s' % (self._context.registry, self._context.registryImagePath)
+        if self._context.opt['--docker-build-target']:
+           image_name = '%s/%s' % (image_name, self._context.opt['--docker-build-target'])
         return image_name
 
     def __getImageTag(self, image_name, tag):
@@ -1033,8 +1025,7 @@ class CLIDriver(object):
                     nbExclusiveOptions = nbExclusiveOptions +1
 
             if nbExclusiveOptions > 1:
-               sys.exit("\x1b[31;1mERROR : Options %s are mutually exclusives\x1b[0m" % ",".join(options))               
+               sys.exit("Options %s are mutually exclusives" % ",".join(options))
 
             if nbExclusiveOptions < minOccurrences:
                sys.exit("%s of %s is required (%s/%s)" % (minOccurrences, ",".join(options),minOccurrences,nbExclusiveOptions))
-               sys.exit("\x1b[31;1mERROR : %s of %s is required (%s/%s)\x1b[0m"% (minOccurrences, ",".join(options),minOccurrences,nbExclusiveOptions))               
