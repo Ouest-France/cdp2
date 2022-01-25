@@ -133,7 +133,6 @@ class Context(object):
 
     def isMultiBuildContext(self):
         return os.path.isfile(self.opt['--build-file'])
-
     @property
     def project_name(self):
         return os.environ['CI_PROJECT_NAME'].lower()
