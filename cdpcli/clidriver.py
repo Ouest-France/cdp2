@@ -303,7 +303,7 @@ class CLIDriver(object):
             repos = []
 
             if self._context.opt['--use-docker'] or not (self._context.opt['--use-docker-compose']) and not (self._context.opt['--docker-build-target']):
-                repos.append(self._context.repository)
+                repos.append(self._context.repository )
             elif (self._context.opt['--docker-build-target']):
                 repos.append('%s/%s' % (self._context.repository, self._context.opt['--docker-build-target']))
             elif self._context.opt['--use-docker-compose']:
@@ -480,6 +480,9 @@ class CLIDriver(object):
         if (self._context.opt['--full-image-path']):
           set_command = '%s --set image.fullImagePath=%s' % (set_command,self._context.opt['--full-image-path'] )
         else:
+           set_command = '%s --set image.name=%s' % (set_command, self._context.image_name)
+           set_command = '%s --set image.root_repository=%s' % (set_command, self._context.root_repository)
+           set_command = '%s --set image.fullname=%s/%s:%s' % (set_command, self._context.registry, self._context.registryImagePath, tag)
            set_command = '%s --set image.registry=%s' % (set_command,  self._context.registry)
            set_command = '%s --set image.repository=%s' % (set_command, self._context.registryImagePath)
            set_command = '%s --set image.tag=%s' % (set_command, tag)

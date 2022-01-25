@@ -131,8 +131,8 @@ class TestCliDriver(unittest.TestCase):
     ci_repository_url = 'https://gitlab-ci-token:iejdzkjziuiez7786@gitlab.com/HelloWorld/HelloWorld/helloworld.git'
     ci_commit_ref_name = 'branch_helloworld_with_many.characters/because_helm_k8s_because_the_length_must_not_longer_than.63'
     ci_commit_ref_slug = 'branch_helloworld_with_many-characters_because_helm_k8s_because_the_length_must_not_longer_than_63'
-    ci_registry_image = 'registry.gitlab.com/helloworld/helloworld'
-    ci_registry_newimage = 'registry.gitlab.com/helloworld/monimage'
+    ci_registry_image = 'registry.gitlab.com/HelloWorld/HelloWorld'
+    ci_registry_newimage = 'registry.gitlab.com/HelloWorld/HelloWorld/monimage'
     ci_project_id = '14'
     ci_project_name = 'hello-world'
     ci_project_name_first_letter = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z0-9]', ci_project_name)])
@@ -691,8 +691,8 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString( TestCliDriver.cdp_custom_registry, TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build -t %s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
-            {'cmd': 'podman push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
+            {'cmd': 'podman build -t %s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path, TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'podman push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path, TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1' }, verif_cmd)
 
@@ -702,8 +702,8 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString( TestCliDriver.cdp_custom_registry, TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build -t %s/%s:%s -f ./Dockerfile . --build-arg %s --build-arg %s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha,"param1=value1","param2=value2"), 'output': 'unnecessary'},
-            {'cmd': 'podman push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
+            {'cmd': 'podman build -t %s/%s:%s -f ./Dockerfile . --build-arg %s --build-arg %s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path, TestCliDriver.ci_commit_sha,"param1=value1","param2=value2"), 'output': 'unnecessary'},
+            {'cmd': 'podman push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path, TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1', '--build-arg=param1=value1', '--build-arg=param2=value2' }, verif_cmd)
 
@@ -724,8 +724,8 @@ services:
         verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_custom_registry,TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build -t %s/%s/cdp:%s -f ./Dockerfile . --target cdp' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
-            {'cmd': 'podman push %s/%s/cdp:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}        ]
+            {'cmd': 'podman build -t %s/%s/cdp:%s -f ./Dockerfile . --target cdp' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path, TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'podman push %s/%s/cdp:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path, TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}        ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1','--docker-build-target=cdp'}, verif_cmd)
 
     def test_docker_usedocker_imagetagsha1_usecustomregistry_with_dockerhub_login(self):
@@ -736,8 +736,8 @@ services:
             {'cmd': self.__getLoginString("https://index.docker.io/v1/",registry_user, registry_token), 'output': 'unnecessary'},
             {'cmd': self.__getLoginString(TestCliDriver.cdp_custom_registry,TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build -t %s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
-            {'cmd': 'podman push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}   
+            {'cmd': 'podman build -t %s/%s:%s -f ./Dockerfile .' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path, TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'podman push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path, TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}   
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1' }, verif_cmd,env_vars = {'CDP_DOCKERHUB_REGISTRY_USER': registry_user,'CDP_DOCKERHUB_READ_ONLY_TOKEN': registry_token })
 
@@ -750,10 +750,10 @@ services:
         verif_cmd = [
             {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
-            {'cmd': 'ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_aws},
+            {'cmd': 'ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'podman build -t %s/%s:%s -f ./Dockerfile .' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
-            {'cmd': 'podman push %s/%s:%s' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
+            {'cmd': 'podman build -t %s/%s:%s -f ./Dockerfile .' % (aws_host, TestCliDriver.ci_project_path, TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'podman push %s/%s:%s' % (aws_host, TestCliDriver.ci_project_path, TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-registry=aws-ecr', '--image-tag-sha1' }, verif_cmd, env_vars = {'CDP_ECR_PATH': aws_host})
 
@@ -769,13 +769,13 @@ services:
         verif_cmd = [
             {'cmd': 'curl --fail -X PUT %s/%s/%s/ -H X-JFrog-Art-Api:%s -T %s'
                 % (TestCliDriver.cdp_artifactory_path,
-                    TestCliDriver.ci_project_path.lower(),
+                    TestCliDriver.ci_project_path,
                     'latest',
                     TestCliDriver.cdp_artifactory_token,
                     upload_file ), 'output': 'unnecessary'},
             {'cmd': 'curl --fail -X PUT %s/%s/%s/ -H X-JFrog-Art-Api:%s -T %s'
                 % (TestCliDriver.cdp_artifactory_path,
-                    TestCliDriver.ci_project_path.lower(),
+                    TestCliDriver.ci_project_path,
                     TestCliDriver.ci_commit_sha,
                     TestCliDriver.cdp_artifactory_token,
                     upload_file ), 'output': 'unnecessary'}
@@ -789,7 +789,7 @@ services:
         verif_cmd = [
             {'cmd': 'curl --fail -X DELETE %s/%s/%s/%s -H X-JFrog-Art-Api:%s'
                 % (TestCliDriver.cdp_artifactory_path,
-                    TestCliDriver.ci_project_path.lower(),
+                    TestCliDriver.ci_project_path,
                     TestCliDriver.ci_commit_ref_slug,
                     upload_file,
                     TestCliDriver.cdp_artifactory_token), 'output': 'unnecessary'}
@@ -841,9 +841,12 @@ services:
                         release,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
-                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_path, 
                         TestCliDriver.ci_registry,
-                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_project_path,
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.ci_registry,
+                        TestCliDriver.ci_project_path,
                         TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.ci_deploy_user,
                         TestCliDriver.ci_deploy_password,
@@ -915,9 +918,12 @@ services:
                         release,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
-                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_path, 
                         TestCliDriver.ci_registry,
-                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_project_path,
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.ci_registry,
+                        TestCliDriver.ci_project_path,
                         TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.ci_deploy_user,
                         TestCliDriver.ci_deploy_password,
@@ -994,9 +1000,12 @@ services:
                         release,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
-                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_path, 
                         TestCliDriver.ci_registry,
-                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_project_path,
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.ci_registry,
+                        TestCliDriver.ci_project_path,
                         TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.ci_deploy_user,
                         TestCliDriver.ci_deploy_password,
@@ -1067,9 +1076,12 @@ services:
                            release,
                            TestCliDriver.cdp_dns_subdomain,
                            TestCliDriver.cdp_dns_subdomain,
-                           TestCliDriver.ci_commit_sha[:8],
+                           TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_path, 
                            TestCliDriver.ci_registry,
-                           TestCliDriver.ci_project_path.lower(),
+                           TestCliDriver.ci_project_path,
+                           TestCliDriver.ci_commit_ref_slug,
+                           TestCliDriver.ci_registry,
+                           TestCliDriver.ci_project_path,
                            TestCliDriver.ci_commit_ref_slug,
                            TestCliDriver.ci_deploy_user,
                            TestCliDriver.ci_deploy_password,
@@ -1137,9 +1149,12 @@ services:
                         release,
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.cdp_dns_subdomain_staging,
-                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_path, 
                         TestCliDriver.ci_registry,
-                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_project_path,
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.ci_registry,
+                        TestCliDriver.ci_project_path,
                         TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.ci_deploy_user,
                         TestCliDriver.ci_deploy_password,
@@ -1205,9 +1220,12 @@ services:
                         release,
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.cdp_dns_subdomain_staging,
-                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_path, 
                         TestCliDriver.ci_registry,
-                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_project_path,
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.ci_registry,
+                        TestCliDriver.ci_project_path,
                         TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.ingress_tlsSecretName,
                         TestCliDriver.ci_deploy_user,
@@ -1335,9 +1353,12 @@ services:
                         release,
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.cdp_dns_subdomain_staging,
-                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_path, 
                         TestCliDriver.ci_registry,
-                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_project_path,
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.ci_registry,
+                        TestCliDriver.ci_project_path,
                         TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.ci_deploy_user,
                         TestCliDriver.ci_deploy_password,
@@ -1408,9 +1429,12 @@ services:
                               release,
                               TestCliDriver.cdp_dns_subdomain_staging,
                               TestCliDriver.cdp_dns_subdomain_staging,
-                              TestCliDriver.ci_commit_sha[:8],
+                              TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_path, 
                               TestCliDriver.ci_registry,
-                              TestCliDriver.ci_project_path.lower(),
+                              TestCliDriver.ci_project_path,
+                              TestCliDriver.ci_commit_ref_slug,
+                              TestCliDriver.ci_registry,
+                              TestCliDriver.ci_project_path,
                               TestCliDriver.ci_commit_ref_slug,
                               TestCliDriver.ci_deploy_user,
                               TestCliDriver.ci_deploy_password,
@@ -1485,9 +1509,12 @@ services:
                         release,
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.cdp_dns_subdomain_staging,
-                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_path, 
                         TestCliDriver.cdp_custom_registry,
-                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_project_path,
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.cdp_custom_registry,
+                        TestCliDriver.ci_project_path,
                         TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_custom_registry_user,
                         TestCliDriver.cdp_custom_registry_read_only_token,
@@ -1552,9 +1579,12 @@ services:
                         release,
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.cdp_dns_subdomain_staging,
-                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_path, 
                         TestCliDriver.cdp_custom_registry,
-                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_project_path,
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.cdp_custom_registry,
+                        TestCliDriver.ci_project_path,
                         TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_custom_registry_user,
                         TestCliDriver.cdp_custom_registry_read_only_token,
@@ -2192,9 +2222,8 @@ services:
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
         m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
-        prefix="fb"
-        image_tag = "%s/%s:%s" % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha)
-        dest_image_tag = "%s/%s:%s-%s" % (aws_host, TestCliDriver.ci_project_path.lower(), prefix, TestCliDriver.ci_commit_sha)
+        image_tag = "%s/%s:%s" % (aws_host, TestCliDriver.ci_project_path, TestCliDriver.ci_commit_sha)
+        dest_image_tag = "%s/%s:%s" % (aws_host, TestCliDriver.ci_project_path, TestCliDriver.ci_commit_sha)
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
 
         with patch("builtins.open", m):
@@ -2213,9 +2242,12 @@ services:
                         release,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
-                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_path, 
                         aws_host,
-                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_project_path,
+                        TestCliDriver.ci_commit_sha,
+                        aws_host,
+                        TestCliDriver.ci_project_path,
                         TestCliDriver.ci_commit_sha,
                         deploy_spec_dir,
                         values,
@@ -2284,9 +2316,12 @@ services:
                         release,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
-                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_path, 
                         aws_host,
-                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_project_path,
+                        TestCliDriver.ci_commit_sha,
+                        aws_host,
+                        TestCliDriver.ci_project_path,
                         TestCliDriver.ci_commit_sha,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
@@ -2356,9 +2391,12 @@ services:
                         release,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
-                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_path, 
                         aws_host,
-                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_project_path,
+                        TestCliDriver.ci_commit_sha,
+                        aws_host,
+                        TestCliDriver.ci_project_path,
                         TestCliDriver.ci_commit_sha,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
@@ -2418,9 +2456,12 @@ services:
                         release,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
-                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_path, 
                         aws_host,
-                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_project_path,
+                        TestCliDriver.ci_commit_sha,
+                        aws_host,
+                        TestCliDriver.ci_project_path,
                         TestCliDriver.ci_commit_sha,
                         release,
                         namespace,
@@ -2480,9 +2521,12 @@ services:
                         release,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
-                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_path, 
                         aws_host,
-                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_project_path,
+                        TestCliDriver.ci_commit_sha,
+                        aws_host,
+                        TestCliDriver.ci_project_path,
                         TestCliDriver.ci_commit_sha,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
@@ -2543,9 +2587,12 @@ services:
                             release,
                             TestCliDriver.cdp_dns_subdomain,
                             TestCliDriver.cdp_dns_subdomain,
-                            TestCliDriver.ci_commit_sha[:8],
+                            TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_path, 
                             aws_host,
-                            TestCliDriver.ci_project_path.lower(),
+                            TestCliDriver.ci_project_path,
+                            TestCliDriver.ci_commit_sha,
+                            aws_host,
+                            TestCliDriver.ci_project_path,
                             TestCliDriver.ci_commit_sha,
                             release,
                             namespace,
@@ -2587,8 +2634,8 @@ services:
         release = '%s-%s'[:53] % (self.__getShortProjectName(), "test")
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
-        image_tag = "%s/%s:%s" % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha)
-        dest_image_tag = "%s/%s:%s-%s" % (aws_host, TestCliDriver.ci_project_path.lower(), prefix, TestCliDriver.ci_commit_sha)
+        image_tag = "%s/%s:%s" % (aws_host, TestCliDriver.ci_project_path, TestCliDriver.ci_commit_sha)
+        dest_image_tag = "%s/%s:%s-%s" % (aws_host, TestCliDriver.ci_project_path, prefix, TestCliDriver.ci_commit_sha)
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
         m.side_effect = [mock_all_resources_tmp.return_value, mock_all_resources_yaml.return_value]
@@ -2609,8 +2656,11 @@ services:
                             TestCliDriver.cdp_dns_subdomain,
                             TestCliDriver.ci_commit_sha[:8],
                             aws_host,
-                            TestCliDriver.ci_project_path.lower(),
-                            TestCliDriver.ci_commit_sha,
+                            TestCliDriver.ci_project_path,
+                            prefix + "-" + TestCliDriver.ci_commit_sha,
+                            aws_host,
+                            TestCliDriver.ci_project_path,
+                            prefix + "-" + TestCliDriver.ci_commit_sha,
                             release,
                             namespace,
                             final_deploy_spec_dir), 'volume_from': 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
@@ -2671,9 +2721,12 @@ services:
                         release,
                         TestCliDriver.cdp_dns_subdomain,
                         TestCliDriver.cdp_dns_subdomain,
-                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_path, 
                         aws_host,
-                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_project_path,
+                        TestCliDriver.ci_commit_sha,
+                        aws_host,
+                        TestCliDriver.ci_project_path,
                         TestCliDriver.ci_commit_sha,
                         release,
                         namespace,

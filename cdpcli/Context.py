@@ -96,16 +96,43 @@ class Context(object):
         return self.__verif_attr(self._registry_token_ro)
 
     @property
-    def repository(self):
-        return self.opt['--image-repository'] if self.opt['--image-repository'] else os.environ['CI_PROJECT_PATH'].lower()
+    def image_name(self):
+        # Configure docker registry
+        image_name = self.opt['--image-name'] if self.opt['--image-name'] else self.project_name
+        return image_name
 
     @property
-    def registryImagePath(self):
-        if self.opt['--use-registry']=="harbor":         
-           return '%s/%s' % (self.opt['--image-repository'] if self.opt['--image-repository'] else self.project_name, self.opt['--image-name'] if self.opt['--image-name'] else self.project_name)
-       
-        return os.environ['CI_PROJECT_NAMESPACE'].lower() + "/" + self.opt['--image-name'] if self.opt['--image-name']  else self.repository 
+    def full_image_path(self):
+        return "%s/%s/%s" % (self.registry, self.repository, self.image_name)
 
+    @property
+    def root_repository(self):
+        return self.opt['--image-repository'] if self.opt['--image-repository'] else ( self.project_name if self.opt['--use-registry']=="harbor" else os.environ['CI_PROJECT_PATH'])
+
+    @property
+    def repository(self):
+        root_repo = self.root_repository
+        subrepo=""
+        if self.opt['--image-name']:
+           subrepo = "/" + self.opt['--image-name']
+        else:
+            if (self.opt['--use-registry']=="harbor") and not self.isMultiBuildContext():
+              subrepo = "/" + self.project_name
+        if self.opt['--docker-build-target']:
+          subrepo = '%s/%s' % (subrepo, self.opt['--docker-build-target'])
+
+        return root_repo + subrepo
+
+
+    @property
+    # Retourne le repo + le nom de l'image
+    # Dans le cas d'un multi-build, ne retourne que le repo pour retrocompatibilité 
+    def registryImagePath(self):
+        repository = self.repository
+        return repository
+
+    def isMultiBuildContext(self):
+        return os.path.isfile(self.opt['--build-file'])
     @property
     def project_name(self):
         return os.environ['CI_PROJECT_NAME'].lower()
