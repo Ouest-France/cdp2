@@ -481,7 +481,7 @@ class CLIDriver(object):
           set_command = '%s --set image.fullname=%s' % (set_command,self._context.opt['--image-fullname'] )
         else:
            set_command = '%s --set image.name=%s' % (set_command, self._context.image_name)
-           set_command = '%s --set image.root_repository=%s' % (set_command, self._context.repository)
+           set_command = '%s --set image.root_repository=%s' % (set_command, self._context.root_repository)
            set_command = '%s --set image.fullname=%s/%s:%s' % (set_command, self._context.registry, self._context.registryImagePath, tag)
            set_command = '%s --set image.registry=%s' % (set_command,  self._context.registry)
            set_command = '%s --set image.repository=%s' % (set_command, self._context.registryImagePath)
