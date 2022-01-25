@@ -311,9 +311,9 @@ class CLIDriver(object):
             repos = []
 
             if self._context.opt['--use-docker'] or not (self._context.opt['--use-docker-compose']) and not (self._context.opt['--docker-build-target']):
-                repos.append(self._context.repository + "/" + self._context.image_name)
+                repos.append(self._context.repository )
             elif (self._context.opt['--docker-build-target']):
-                repos.append('%s/%s/%s' % (self._context.repository, self._context.image_name, self._context.opt['--docker-build-target']))
+                repos.append('%s/%s' % (self._context.repository, self._context.opt['--docker-build-target']))
             elif self._context.opt['--use-docker-compose']:
                  sys.exit("\x1b[31;1mERROR : docker-compose is deprecated.\x1b[0m")
             for repo in repos:
@@ -752,9 +752,9 @@ class CLIDriver(object):
 
     def __callArtifactoryFile(self, tag, upload_file, http_verb):
         if http_verb == 'PUT':
-            self._cmd.run_command('curl --fail -X PUT %s/%s/%s/%s/ -H X-JFrog-Art-Api:%s -T %s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, self._context.image_name, tag, os.environ['CDP_ARTIFACTORY_TOKEN'], upload_file))
+            self._cmd.run_command('curl --fail -X PUT %s/%s/%s/ -H X-JFrog-Art-Api:%s -T %s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, os.environ['CDP_ARTIFACTORY_TOKEN'], upload_file))
         elif http_verb == 'DELETE':
-            self._cmd.run_command('curl --fail -X DELETE %s/%s/%s/%s/%s -H X-JFrog-Art-Api:%s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, self._context.image_name, tag, upload_file, os.environ['CDP_ARTIFACTORY_TOKEN']))
+            self._cmd.run_command('curl --fail -X DELETE %s/%s/%s/%s -H X-JFrog-Art-Api:%s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, upload_file, os.environ['CDP_ARTIFACTORY_TOKEN']))
 
     def __validator(self):
         url = 'https://%s/%s' % (self.__getHost(), self._context.opt['--path'])

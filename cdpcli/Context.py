@@ -116,11 +116,9 @@ class Context(object):
     # Dans le cas d'un multi-build, ne retourne que le repo pour retrocompatibilité 
     def registryImagePath(self):
         repository = self.repository
-        if self.isMultiBuildContext():
-            return repository
-
-        return '%s/%s' % (repository, self.image_name)
-       
+        if self.opt['--use-registry']=="harbor":
+            return '%s/%s' % (repository, self.image_name)
+        return repository
 
     def isMultiBuildContext(self):
         return os.path.isfile(self.opt['--build-file'])
