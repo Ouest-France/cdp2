@@ -41,7 +41,6 @@ class Context(object):
 
         # Login to Dockerhub if needed
         self.__loginDockerhub()
-
         if opt['--use-registry'] != 'none':
             if opt['maven'] or opt['docker'] or opt['k8s']:
                 if opt['--use-registry'] == 'aws-ecr' :
@@ -75,6 +74,7 @@ class Context(object):
 
 
     def __set_registry(self,registry,user_ro,token_ro):
+        print("OOOOOOO")
         self._registry = registry
         self._registry_user_ro = user_ro
         self._registry_token_ro = token_ro
@@ -106,12 +106,12 @@ class Context(object):
         return "%s/%s/%s" % (self.registry, self.repository, self.image_name)
 
     @property
-    def root_repository(self):
+    def base_repository(self):
         return self.opt['--image-repository'] if self.opt['--image-repository'] else ( self.project_name if self.opt['--use-registry']=="harbor" else os.environ['CI_PROJECT_PATH'])
 
     @property
     def repository(self):
-        root_repo = self.root_repository
+        root_repo = self.base_repository
         subrepo=""
         if self.opt['--image-name']:
            subrepo = "/" + self.opt['--image-name']

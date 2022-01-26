@@ -77,10 +77,7 @@ Options:
     --create-gitlab-secret-hook                                Create gitlab secret with hook
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
-    --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
-    --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
     --docker-build-target=<target_name>                        Specify target in multi stage build
-    --goals=<goals-opts>                                       Goals and args to pass maven command.
     --helm-version=<version>                                   Major version of Helm. [default: 3]
     --helm-migration=<true|false>                              Do helm 2 to Helm 3 migration
     --image-repository=<repository>                            Force the name of the repository of the image. Default is Gitlab project path (or namespace for Harbor).
@@ -94,7 +91,6 @@ Options:
     --ingress-tlsSecretNamespace=<secretNamespace>             Namespace of the tls secret    
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
-    --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
     --namespace-name=<namespace_name>                          Use namespace_name to create k8s namespace.
     --no-conftest                                              Do not run conftest validation tests.
@@ -116,6 +112,10 @@ Options:
     --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
 Deprecated options:
+    --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
+    --goals=<goals-opts>                                       Goals and args to pass maven command.
+    --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
+    --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
     --docker-image-aws=<image_name_aws>                        Docker image which execute git command [DEPRECATED].
     --docker-image-git=<image_name_git>                        Docker image which execute git command [DEPRECATED].
     --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [DEPRECATED].
@@ -138,20 +138,6 @@ Deprecated options:
 Gitlab >= 10.8
 
 ```yaml
-maven:
- - MAVEN_OPTS – Add option for maven command (Optional)
- --deploy=x:
-    - CDP_REPOSITORY_USERNAME – Username for read/write in maven repository
-    - CDP_REPOSITORY_PASSWORD – Password
-    - CDP_REPOSITORY_URL – URL of maven repository
-    - CDP_PLUGINREPOSITORY_URL – URL of maven plugin repository
- --deploy=snapshot:
-    - CDP_REPOSITORY_MAVEN_SNAPSHOT – Repository for snapshot (example libs-snapshot-local)
-    - CDP_PLUGINREPOSITORY_MAVEN_SNAPSHOT – Plugin repository for snapshot (example libs-snapshot-local)
- --deploy=release:
-    - CDP_REPOSITORY_MAVEN_RELEASE – Repository for release (example libs-release-local)
-    - CDP_PLUGINREPOSITORY_MAVEN_RELEASE – Plugin repository for release (example libs-release-local)
-
 sonar:
  - CDP_SONAR_LOGIN – Sonar access token (scope Administer Quality Profiles / Administer Quality Gates).
  - CDP_SONAR_URL – Sonar url access.
@@ -212,15 +198,6 @@ stages:
   - deploy
   ...
 
-build:
-  image: ouestfrance/cdp:latest
-  stage: build
-  script:
-    - cdp build --docker-image=maven:3.5-jdk-8 --command='mvn clean verify' --simulate-merge-on=develop
-  artifacts:
-    paths:
-    - target/*.jar
-
 codeclimate:
   image: ouestfrance/cdp:latest
   stage: quality
@@ -270,18 +247,18 @@ deploy_staging:
 You can build multiple images in one command by creating a cdp-build-file.yml file in the root of your project. 
 This file follows the same description as the docker-compose.yml files
 
-CDP_REGISTRY_PATH,CDP_REGISTRY, CDP_IMAGE, CDP_IMAGE_PATH and CDP_TAG environment variables are automatically set by CDP and refer to the registry, the path of repository, the current built image and the tag issued from --image-tagx options.
+CDP_REGISTRY_PATH,CDP_REGISTRY, CDP_BASE_REPOSITORY, CDP_REPOSITORY, CDP_IMAGE, CDP_IMAGE_PATH and CDP_TAG environment variables are automatically set by CDP and refer to the registry, the path of repository (idem as CDP_REPOSITORY), the base repository, the current built image and the tag issued from --image-tagx options.
 
 ```yaml
 version: '3'
 services:
   nginx:
-    image: ${CDP_REGISTRY_PATH:-local}/${CDP_REPOSITORY:-local}/my-nginx-project-name:${CDP_TAG:-latest}
+    image: ${CDP_REGISTRY_PATH:-local}/${CDP_BASE_REPOSITORY:-local}/my-nginx-project-name:${CDP_TAG:-latest}
     build:
       context: ./distribution/nginx
       dockerfile: Dockerfile
   php:
-    image: ${CDP_REGISTRY_PATH:-local}/${CDP_REPOSITORY:-local}/my-php-project-name:${CDP_TAG:-latest}
+    image: ${CDP_REGISTRY_PATH:-local}/${CDP_BASE_REPOSITORY:-local}/my-php-project-name:${CDP_TAG:-latest}
     build:
       context: ./distribution/php7-fpm
       dockerfile: Dockerfile
