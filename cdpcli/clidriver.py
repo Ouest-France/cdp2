@@ -375,7 +375,7 @@ class CLIDriver(object):
 
         # Gestion des prefix des tags pour la retention auto de Harbor            
         prefix = self._context.getParamOrEnv("image-prefix-tag")
-        if prefix:
+        if prefix and self._context._registry != None:
             # Apply prefix to all built images
             images = self.__getImagesToBuild(self.__getImageName(), tag)
             for image in images:
