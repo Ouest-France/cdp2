@@ -7,6 +7,7 @@ import json
 import base64
 from .awscommand import AwsCommand
 
+# Classe de définition du context
 class Context(object):
 
     def __init__(self, opt, cmd, LOG):
