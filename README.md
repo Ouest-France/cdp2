@@ -31,7 +31,7 @@ Usage:
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-gitlab-registry] [--use-aws-ecr] [--use-custom-registry] [--use-registry=<registry_name>] 
         [--helm-version=<version>]
-        [--image-name=<image_name>] [--image-repository=<repository>] [--full-image-path=<registry/repository/image:tag>]
+        [--image-name=<image_name>] [--image-repository=<repository>] [--image-fullname=<registry/repository/image:tag>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>] 
         [--image-prefix-tag=<tag>]
         [(--create-gitlab-secret)]
@@ -46,7 +46,7 @@ Usage:
         [--chart-repo=<repo>] [--use-chart=<chart:branch>] [--chart-subtype=<subtype>]
         [--timeout=<timeout>]
         [--tiller-namespace]
-        [--release-project-branch-name] [--release-project-env-name] [--release-project-name] [--release-shortproject-name] [--release-namespace-name] [--release-custom-name=<release_name>]
+        [--release-project-branch-name] [--release-project-env-name] [--release-project-name] [--release-shortproject-name] [--release-namespace-name] [--release-custom-name=<release_name>] [--release-name=<release_name>]
         [--image-pull-secret] [--ingress-tlsSecretName=<secretName>] [--ingress-tlsSecretNamespace=<secretNamespace>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
@@ -77,11 +77,15 @@ Options:
     --create-gitlab-secret-hook                                Create gitlab secret with hook
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
+    --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
+    --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
     --docker-build-target=<target_name>                        Specify target in multi stage build
+    --goals=<goals-opts>                                       Goals and args to pass maven command.
     --helm-version=<version>                                   Major version of Helm. [default: 3]
     --helm-migration=<true|false>                              Do helm 2 to Helm 3 migration
     --image-repository=<repository>                            Force the name of the repository of the image. Default is Gitlab project path (or namespace for Harbor).
     --image-name=<image_name>                                  Force the name of the image. Default is project name.
+    --image-fullname=<registry/repository/image:tag>           Use full image name overriding path calculated by CDP
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
@@ -91,6 +95,7 @@ Options:
     --ingress-tlsSecretNamespace=<secretNamespace>             Namespace of the tls secret    
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
+    --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
     --namespace-name=<namespace_name>                          Use namespace_name to create k8s namespace.
     --no-conftest                                              Do not run conftest validation tests.
@@ -98,6 +103,7 @@ Options:
     --put=<file>                                               Put file to artifactory.
     --release-ttl=<minutes>                                    Set ttl (Time to live) time for the release. Will be removed after the time.
     --release-custom-name=<release_name>                       Customize release name with namespace-name-<release_name>
+    --release-name=<release_name>                              Customize release name
     --release-namespace-name                                   Force the release to be created with the namespace name. Same as --release-project-name if namespace-name option is not set. [default]
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
@@ -108,14 +114,9 @@ Options:
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
     --use-docker                                               Use docker to build / push image [default].
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
-    --full-image-path=<registry/repository/image:tag>          Use full image path overriding path calculated by CDP
     --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
 Deprecated options:
-    --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
-    --goals=<goals-opts>                                       Goals and args to pass maven command.
-    --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
-    --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
     --docker-image-aws=<image_name_aws>                        Docker image which execute git command [DEPRECATED].
     --docker-image-git=<image_name_git>                        Docker image which execute git command [DEPRECATED].
     --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [DEPRECATED].
@@ -131,7 +132,7 @@ Deprecated options:
     --use-docker-compose                                       Use docker-compose to build / push image / retag container [DEPRECATED]
     --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default]. [DEPRECATED]
     --volume-from=<host_type>                                  Volume type of sources - docker, k8s, local or docker volume description (dir:mount) [DEPRECATED] 
-    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup. use --release-ttl instead [DEPRECATED] 
+    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup. use release-ttl instead [DEPRECATED]
 ```
 ### _Prerequisites_
 

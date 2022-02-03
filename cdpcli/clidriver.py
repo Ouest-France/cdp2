@@ -41,7 +41,7 @@ Usage:
         [--chart-repo=<repo>] [--use-chart=<chart:branch>] [--chart-subtype=<subtype>]
         [--timeout=<timeout>]
         [--tiller-namespace]
-        [--release-project-branch-name] [--release-project-env-name] [--release-project-name] [--release-shortproject-name] [--release-namespace-name] [--release-custom-name=<release_name>]
+        [--release-project-branch-name] [--release-project-env-name] [--release-project-name] [--release-shortproject-name] [--release-namespace-name] [--release-custom-name=<release_name>] [--release-name=<release_name>]
         [--image-pull-secret] [--ingress-tlsSecretName=<secretName>] [--ingress-tlsSecretNamespace=<secretNamespace>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
@@ -98,6 +98,7 @@ Options:
     --put=<file>                                               Put file to artifactory.
     --release-ttl=<minutes>                                    Set ttl (Time to live) time for the release. Will be removed after the time.
     --release-custom-name=<release_name>                       Customize release name with namespace-name-<release_name>
+    --release-name=<release_name>                              Customize release name
     --release-namespace-name                                   Force the release to be created with the namespace name. Same as --release-project-name if namespace-name option is not set. [default]
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
@@ -224,10 +225,13 @@ class CLIDriver(object):
 
 
     def main(self, args=None):
-        exclusiveReleaseOptions = ["--release-project-branch-name","--release-project-env-name","--release-project-name","--release-shortproject-name","--release-namespace-name","--release-custom-name"]            
+        exclusiveReleaseOptions = ["--release-project-branch-name","--release-project-env-name","--release-project-name","--release-shortproject-name","--release-namespace-name","--release-custom-name","--release-name"]            
         exclusiveRegistryOptions = ["--use-gitlab-registry","--use-aws-ecr","--use-custom-registry","--use-registry"]
         exclusiveTagsOptions = ["--image-tag-branch-name","--image-tag-latest","--image-tag-sha1","--image-tag","--image-fullname"]
         try:
+            #if self._context.opt['login']:
+            #    print ("Login to %s registry done" % self._context.opt['--use-registry'])
+
             if self._context.opt['maven']:
                 self.check_runner_permissions("maven")
                 self.__maven()
@@ -825,6 +829,8 @@ class CLIDriver(object):
             release = self.__getEnvName()
         elif self._context.opt['--release-custom-name']:
             release =  (self.__getShortProjectName() +'-'+ self._context.opt['--release-custom-name'])
+        elif self._context.opt['--release-name']:
+            release =  self._context.opt['--release-name']
         elif self._context.opt['--release-project-name']:
             release = os.environ['CI_PROJECT_NAME']
         elif self._context.opt['--release-shortproject-name']:

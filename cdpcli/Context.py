@@ -43,39 +43,35 @@ class Context(object):
         # Login to Dockerhub if needed
         self.__loginDockerhub()
         if opt['--use-registry'] != 'none':
-            if opt['maven'] or opt['docker'] or opt['k8s']:
-                if opt['--use-registry'] == 'aws-ecr' :
-                    ### Get login from AWS-CLI
-                    aws_cmd = AwsCommand(cmd, "", True)
-                    login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', aws_cmd.run('ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', dry_run=False)[0].strip())
-                    self._registry = login_regex[0][2]
-                    self._registry_user_ro = login_regex[0][0]
-                    self._registry_token_ro = login_regex[0][1]
-                    # Login AWS registry
-                    self.__login(self._registry, self._registry_user_ro,self._registry_token_ro)
-
-                elif opt['--use-registry'] == 'gitlab' :
-                    # Use gitlab registry
-                    self.__set_registry(os.getenv('CI_REGISTRY', None),
-                                        os.getenv('CI_DEPLOY_USER', None),
-                                        os.getenv('CI_DEPLOY_PASSWORD', None))
-                    # Login gitlab registry
-                    self.__login(os.getenv('CI_REGISTRY', None),
-                                 os.getenv('CI_REGISTRY_USER', None),
-                                 os.getenv('CI_JOB_TOKEN', None))
-                else:
-                    ### Used by '--use-registry' params
-                    registry = opt['--use-registry'].upper()
-                    self.__set_registry(os.getenv('CDP_%s_REGISTRY' % registry,None),
-                                        self.getRegistryReadOnlyUser(registry),
-                                        os.getenv('CDP_%s_REGISTRY_READ_ONLY_TOKEN' % registry,None))
-                    self.__login(os.getenv('CDP_%s_REGISTRY' % registry, None),
-                                 os.getenv('CDP_%s_REGISTRY_USER' % registry, None),
-                                 os.getenv('CDP_%s_REGISTRY_TOKEN' % registry, None))
-
+            if opt['--use-registry'] == 'aws-ecr' :
+                ### Get login from AWS-CLI
+                aws_cmd = AwsCommand(cmd, "", True)
+                login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', aws_cmd.run('ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', dry_run=False)[0].strip())
+                self._registry = login_regex[0][2]
+                self._registry_user_ro = login_regex[0][0]
+                self._registry_token_ro = login_regex[0][1]
+                # Login AWS registry
+                self.__login(self._registry, self._registry_user_ro,self._registry_token_ro)
+            elif opt['--use-registry'] == 'gitlab' :
+                # Use gitlab registry
+                self.__set_registry(os.getenv('CI_REGISTRY', None),
+                                    os.getenv('CI_DEPLOY_USER', None),
+                                    os.getenv('CI_DEPLOY_PASSWORD', None))
+                # Login gitlab registry
+                self.__login(os.getenv('CI_REGISTRY', None),
+                             os.getenv('CI_REGISTRY_USER', None),
+                             os.getenv('CI_JOB_TOKEN', None))
+            else:
+                ### Used by '--use-registry' params
+                registry = opt['--use-registry'].upper()
+                self.__set_registry(os.getenv('CDP_%s_REGISTRY' % registry,None),
+                                    self.getRegistryReadOnlyUser(registry),
+                                    os.getenv('CDP_%s_REGISTRY_READ_ONLY_TOKEN' % registry,None))
+                self.__login(os.getenv('CDP_%s_REGISTRY' % registry, None),
+                             os.getenv('CDP_%s_REGISTRY_USER' % registry, None),
+                             os.getenv('CDP_%s_REGISTRY_TOKEN' % registry, None))
 
     def __set_registry(self,registry,user_ro,token_ro):
-        print("OOOOOOO")
         self._registry = registry
         self._registry_user_ro = user_ro
         self._registry_token_ro = token_ro
@@ -168,9 +164,9 @@ class Context(object):
 
     def __login(self, registry, registry_user, registry_token):
         # Activate login, only specific stage.
-        if self._opt['maven'] or self._opt['docker'] or self._opt['k8s']:
+        if self._opt['docker'] or self._opt['k8s']:
             if registry_user is not None and registry_token is not None and registry is not None:
-               self.__loginRegistry(registry, registry_user, registry_token)
+              self.__loginRegistry(registry, registry_user, registry_token)
 
 
     def __loginRegistry(self, registry, registry_user, registry_token):
