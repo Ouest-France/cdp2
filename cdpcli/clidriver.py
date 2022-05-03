@@ -617,6 +617,7 @@ class CLIDriver(object):
 
         # Install or Upgrade environnement
         try:
+          self._cmd.run_command('/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release))            
           helm_cmd.run(command)
         except OSError as e: 
           # Recuperation des events pour debuggage
