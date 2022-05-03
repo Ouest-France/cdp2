@@ -856,6 +856,7 @@ services:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -933,6 +934,7 @@ services:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -1017,6 +1019,7 @@ services:
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': cmdcurl, 'output': 'unnecessary'},                
                 {'cmd': 'test --policy policy --data data all_resources.yaml', 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_conftest,'workingDir':chartdir},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -1092,6 +1095,7 @@ services:
                            release,
                            namespace,
                            final_deploy_spec_dir), 'volume_from': 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600 -i --namespace=%s --force --wait --atomic'
                         % (release,
                            final_deploy_spec_dir,
@@ -1164,6 +1168,7 @@ services:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -1236,6 +1241,7 @@ services:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -1296,6 +1302,7 @@ services:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -1368,6 +1375,7 @@ services:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -1445,6 +1453,7 @@ services:
                               namespace,
                               final_deploy_spec_dir), 'volume_from': 'k8s', 'output': 'unnecessary',
                     'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {
                     'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                            % (release,
@@ -1524,6 +1533,7 @@ services:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -1594,6 +1604,7 @@ services:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -1664,6 +1675,7 @@ services:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -1740,6 +1752,7 @@ services:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -1817,6 +1830,7 @@ services:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -1895,6 +1909,7 @@ services:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -1972,6 +1987,7 @@ services:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -2050,6 +2066,7 @@ services:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -2125,6 +2142,7 @@ services:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -2204,6 +2222,7 @@ services:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -2276,6 +2295,7 @@ services:
                         values,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout %ss --history-max 20 -i --namespace=%s --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
@@ -2348,6 +2368,7 @@ services:
                         TestCliDriver.ci_commit_sha,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -2423,6 +2444,7 @@ services:
                         TestCliDriver.ci_commit_sha,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -2489,6 +2511,7 @@ services:
                         release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600 --tiller-namespace=%s -i --namespace=%s --force --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -2553,6 +2576,7 @@ services:
                         TestCliDriver.ci_commit_sha,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
@@ -2620,6 +2644,7 @@ services:
                             release,
                             namespace,
                             final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
+                    {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                     {'cmd': 'upgrade %s %s --timeout 600 --tiller-namespace=%s -i --namespace=%s --force --wait --atomic'
                         % (release,
                             final_deploy_spec_dir,
@@ -2687,6 +2712,7 @@ services:
                             release,
                             namespace,
                             final_deploy_spec_dir), 'volume_from': 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
+                 {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                  {'cmd': 'upgrade %s %s --timeout 600 --tiller-namespace=%s -i --namespace=%s --force --wait --atomic'
                          % (release,
                             final_deploy_spec_dir,
@@ -2754,6 +2780,7 @@ services:
                         release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
                 {'cmd': 'upgrade %s %s --timeout 600 --tiller-namespace=%s -i --namespace=%s --force --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
