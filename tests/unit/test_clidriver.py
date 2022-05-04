@@ -2557,7 +2557,7 @@ services:
             verif_cmd = [
                 {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
                 {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
-                {'cmd': '/cdp/scripts/migrate_helm.sh -n %s -r %s' % ( namespace, release ), 'output': 'unnecessarry','throw':OSError(1,'effectuee')},
+                {'cmd': '/cdp/scripts/migrate_helm.sh -n %s -r %s -t %s' % ( namespace, release, namespace ), 'output': 'unnecessarry','throw':OSError(1,'effectuee')},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.name=%s --set image.base_repository=%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
