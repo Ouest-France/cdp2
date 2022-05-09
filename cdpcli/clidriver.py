@@ -400,7 +400,10 @@ class CLIDriver(object):
         # Helm2to3 migration
         if helm_migration:
            try:
-              output = self._cmd.run_command('/cdp/scripts/migrate_helm.sh -n %s -r %s' % (namespace, release))            
+              migr_cmd = '/cdp/scripts/migrate_helm.sh -n %s -r %s' % (namespace, release)
+              if self._context.opt['--tiller-namespace']:
+                 migr_cmd = '%s -t %s' % (migr_cmd, namespace)
+              output = self._cmd.run_command(migr_cmd)            
            except OSError as e:            
               if e.errno > 1:
                   sys.exit("\x1b[31;1mERROR : Migration to helm 3 of release %s has failed : %s\x1b[0m" % (release, str(e)))
