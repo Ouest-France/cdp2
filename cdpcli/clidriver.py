@@ -629,7 +629,7 @@ class CLIDriver(object):
 
         # Tout s'est bien passé, on clean la release ou le namespace si dernière release
         if cleanupHelm2:
-           self._cmd.run_command("/cdp/scripts/cleanup.sh -n %s -r %s" % (namespace, release))            
+           self._cmd.run_command("/cdp/scripts/cleanup.sh %s -r %s" % ("-t " + namespace if self._context.opt['--tiller-namespace'] else "", release))            
 
         self.__update_environment()
 
