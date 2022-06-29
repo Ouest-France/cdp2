@@ -323,7 +323,7 @@ class CLIDriver(object):
             for repo in repos:
                 try:
                     aws_cmd.run('ecr list-images --repository-name %s --max-items 0' % repo)
-                except ValueError:
+                except Exception:
                     LOG.warning('AWS ECR repository doesn\'t  exist. Creating this one.')
                     aws_cmd.run('ecr create-repository --repository-name %s' % repo)
 
@@ -629,7 +629,7 @@ class CLIDriver(object):
 
         # Tout s'est bien passé, on clean la release ou le namespace si dernière release
         if cleanupHelm2:
-           self._cmd.run_command("/cdp/scripts/cleanup.sh -n %s -r %s" % (namespace, release))            
+           self._cmd.run_command("/cdp/scripts/cleanup.sh %s -r %s" % ("-n " + namespace if self._context.opt['--tiller-namespace'] else "", release))            
 
         self.__update_environment()
 
