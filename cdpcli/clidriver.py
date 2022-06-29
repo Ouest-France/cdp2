@@ -323,7 +323,7 @@ class CLIDriver(object):
             for repo in repos:
                 try:
                     aws_cmd.run('ecr list-images --repository-name %s --max-items 0' % repo)
-                except ValueError:
+                except Exception:
                     LOG.warning('AWS ECR repository doesn\'t  exist. Creating this one.')
                     aws_cmd.run('ecr create-repository --repository-name %s' % repo)
 
