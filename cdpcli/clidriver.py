@@ -39,7 +39,7 @@ Usage:
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--helm-migration=[true|false]]
         [--chart-repo=<repo>] [--use-chart=<chart:branch>] [--chart-subtype=<subtype>]
-        [--additional-chart-repo=<repo>] [--use-additionnal-chart=<chart:branch>] 
+        [--additional-chart-repo=<repo>] [--use-additional-chart=<chart:branch>] 
         [--timeout=<timeout>]
         [--tiller-namespace]
         [--release-project-branch-name] [--release-project-env-name] [--release-project-name] [--release-shortproject-name] [--release-namespace-name] [--release-custom-name=<release_name>] [--release-name=<release_name>]
