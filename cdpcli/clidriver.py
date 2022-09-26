@@ -39,6 +39,7 @@ Usage:
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--helm-migration=[true|false]]
         [--chart-repo=<repo>] [--use-chart=<chart:branch>] [--chart-subtype=<subtype>]
+        [--additional-chart-repo=<repo>] [--use-additionnal-chart=<chart:branch>] 
         [--timeout=<timeout>]
         [--tiller-namespace]
         [--release-project-branch-name] [--release-project-env-name] [--release-project-name] [--release-shortproject-name] [--release-namespace-name] [--release-custom-name=<release_name>] [--release-name=<release_name>]
@@ -65,6 +66,8 @@ Options:
     --chart-repo=<repo>                                        Path of the repository of default charts
     --use-chart=<chart:branch>                                 Name of the pre-defined chart to use. Format : name or name:branch
     --chart-subtype=<subtype>                                  Subtype of chart if needed. Allowed values : php
+    --additional-chart-repo=<repo>                             Path of additional repository of default charts
+    --use-additional-chart=<chart:branch>                      Name of the pre-defined chart for the additional repository to use. Format : name or name:branch
     --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
     --conftest-namespaces=<namespaces>                         Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACES is used if empty.
     --create-default-helm                                      Create default helm for simple project (One docker image).
@@ -427,7 +430,7 @@ class CLIDriver(object):
             else:
                 chartIsPresent = False
                 #Download predefined chart in a temporary directory
-                self.downloadChart(tmp_chart_dir)
+                self.downloadChart(tmp_chart_dir,self._context.getParamOrEnv('chart-repo',""), self._context.getParamOrEnv('use-chart',""))
                 if os.path.isfile('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir']):
                    chartIsPresent = True
                    # We delete default Chart.yaml cause it exists in working directory
@@ -441,6 +444,10 @@ class CLIDriver(object):
                        f.seek(0)
                        f.write(text)
                        f.truncate()
+                # Download additional chart if set
+                if self._context.opt['--use-additional-chart']:
+                   self.downloadChart(tmp_chart_dir,self._context.getParamOrEnv('additional-chart-repo',""), self._context.getParamOrEnv('use-additional-chart',""))
+
             self._cmd.run_command('cp -R %s/* %s/' % (tmp_chart_dir, self._context.opt['--deploy-spec-dir']))
             #shutil.copytree('%s' % tmp_chart_dir, '%s' % self._context.opt['--deploy-spec-dir'])
 
@@ -1011,13 +1018,11 @@ class CLIDriver(object):
     def warning(quiet):
         return quiet or os.getenv('CDP_LOG_LEVEL', None) == 'warning'
 
-    def downloadChart(self, chartdir):
-        chart_repo = self._context.getParamOrEnv('chart-repo',"")
+    def downloadChart(self, chartdir, chart_repo, use_chart):
         if (chart_repo == "" or chart_repo == "none" ):
             return
 
         chart_repo = chart_repo.replace("/","%2F")
-        use_chart = self._context.getParamOrEnv('use-chart',"")
         if (use_chart != "" and use_chart != "none" ):
 
             try: 
