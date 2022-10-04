@@ -43,6 +43,7 @@ Usage:
         [--tiller-namespace]
         [--release-project-branch-name] [--release-project-env-name] [--release-project-name] [--release-shortproject-name] [--release-namespace-name] [--release-custom-name=<release_name>] [--release-name=<release_name>]
         [--image-pull-secret] [--ingress-tlsSecretName=<secretName>] [--ingress-tlsSecretNamespace=<secretNamespace>]
+        [--ingress-className=<className>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
         [--volume-from=<host_type>]
@@ -86,6 +87,7 @@ Options:
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
     --image-tag=<tag>                                          Tag name
     --image-prefix-tag=<tag>                                   Tag prefix for docker image.
+    --ingress-className=<className>                            Name of the ingress class
     --ingress-tlsSecretName=<secretName>                       Name of the tls secret for ingress 
     --ingress-tlsSecretNamespace=<secretNamespace>             Namespace of the tls secret    
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
@@ -500,6 +502,9 @@ class CLIDriver(object):
         tlsSecretName = self._context.getParamOrEnv("ingress-tlsSecretName")
         if (tlsSecretName):
             set_command = '%s --set ingress.tlsSecretName=%s' % (set_command, tlsSecretName)
+        ingressClassName = self.__getIngressClassName()
+        if (ingressClassName):
+            set_command = '%s --set ingress.ingressClassName=%s' % (set_command, ingressClassName)
         # Need to add secret file for docker registry
         if not self._context.opt['--use-registry'] == 'aws-ecr' and not self._context.opt['--use-registry'] == 'none':
             # Add secret (Only if secret is not exist )
@@ -942,6 +947,9 @@ class CLIDriver(object):
 
     def __getLabelName(self):
         return ( os.getenv("CDP_REGISTRY_LABEL"))
+
+    def __getIngressClassName(self):
+        return ( self._context.getParamOrEnv('ingress-className'))
 
     '''
     Lancement des tests conftest. 
