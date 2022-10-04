@@ -90,9 +90,9 @@ Options:
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
     --image-tag=<tag>                                          Tag name
     --image-prefix-tag=<tag>                                   Tag prefix for docker image.
-    --ingress-className=<className>                            Name of the ingress class
-    --ingress-tlsSecretName=<secretName>                       Name of the tls secret for ingress 
-    --ingress-tlsSecretNamespace=<secretNamespace>             Namespace of the tls secret    
+    --ingress-className=<className>                            Name of the ingress class. Use CDP_INGRESS_CLASSNAME if empty
+    --ingress-tlsSecretName=<secretName>                       Name of the tls secret for ingress. Use CDP_INGRESS_TLSSECRETNAME if empty 
+    --ingress-tlsSecretNamespace=<secretNamespace>             Namespace of the tls secret. . Use CDP_INGRESS_TLSSECRETNAMESPACE if empty     
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
