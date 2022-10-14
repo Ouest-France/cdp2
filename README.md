@@ -44,6 +44,7 @@ Usage:
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--helm-migration=[true|false]]
         [--chart-repo=<repo>] [--use-chart=<chart:branch>] [--chart-subtype=<subtype>]
+        [--additional-chart-repo=<repo>] [--use-additional-chart=<chart:branch>] 
         [--timeout=<timeout>]
         [--tiller-namespace]
         [--release-project-branch-name] [--release-project-env-name] [--release-project-name] [--release-shortproject-name] [--release-namespace-name] [--release-custom-name=<release_name>] [--release-name=<release_name>]
@@ -70,6 +71,8 @@ Options:
     --chart-repo=<repo>                                        Path of the repository of default charts
     --use-chart=<chart:branch>                                 Name of the pre-defined chart to use. Format : name or name:branch
     --chart-subtype=<subtype>                                  Subtype of chart if needed. Allowed values : php
+    --additional-chart-repo=<repo>                             Path of additional repository of default charts
+    --use-additional-chart=<chart:branch>                      Name of the pre-defined chart for the additional repository to use. Format : name or name:branch
     --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
     --conftest-namespaces=<namespaces>                         Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACES is used if empty.
     --create-default-helm                                      Create default helm for simple project (One docker image).
@@ -132,7 +135,7 @@ Deprecated options:
     --use-docker-compose                                       Use docker-compose to build / push image / retag container [DEPRECATED]
     --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default]. [DEPRECATED]
     --volume-from=<host_type>                                  Volume type of sources - docker, k8s, local or docker volume description (dir:mount) [DEPRECATED] 
-    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup. use release-ttl instead [DEPRECATED]
+    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup. use release-ttl instead [DEPRECATED] 
 ```
 ### _Prerequisites_
 
