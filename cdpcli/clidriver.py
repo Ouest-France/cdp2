@@ -515,7 +515,7 @@ class CLIDriver(object):
             set_command = '%s --set ingress.ingressClassName=%s' % (set_command, ingressClassName)
         alternateIngressClassName = self.__getAlternateIngressClassName()
         if (alternateIngressClassName):
-            set_command = '%s --set ingress.alteranteIngressClassName=%s' % (set_command, alternateIngressClassName)
+            set_command = '%s --set ingress.alteanateIngressClassName=%s' % (set_command, alternateIngressClassName)
         # Need to add secret file for docker registry
         if not self._context.opt['--use-registry'] == 'aws-ecr' and not self._context.opt['--use-registry'] == 'none':
             # Add secret (Only if secret is not exist )
