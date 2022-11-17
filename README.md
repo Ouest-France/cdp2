@@ -49,7 +49,7 @@ Usage:
         [--tiller-namespace]
         [--release-project-branch-name] [--release-project-env-name] [--release-project-name] [--release-shortproject-name] [--release-namespace-name] [--release-custom-name=<release_name>] [--release-name=<release_name>]
         [--image-pull-secret] [--ingress-tlsSecretName=<secretName>] [--ingress-tlsSecretNamespace=<secretNamespace>]
-        [--ingress-className=<className>]
+        [--ingress-className=<className>] [--ingress-className-alternate=<className>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
         [--volume-from=<host_type>]
@@ -96,6 +96,7 @@ Options:
     --image-tag=<tag>                                          Tag name
     --image-prefix-tag=<tag>                                   Tag prefix for docker image.
     --ingress-className=<className>                            Name of the ingress class. Use CDP_INGRESS_CLASSNAME if empty
+    --ingress-className-alternate=<className>                  Name of the alternate ingress class. Use CDP_INGRESS_CLASSNAME_ALTERNATE if empty
     --ingress-tlsSecretName=<secretName>                       Name of the tls secret for ingress. Use CDP_INGRESS_TLSSECRETNAME if empty 
     --ingress-tlsSecretNamespace=<secretNamespace>             Namespace of the tls secret. . Use CDP_INGRESS_TLSSECRETNAMESPACE if empty     
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
@@ -137,7 +138,7 @@ Deprecated options:
     --use-docker-compose                                       Use docker-compose to build / push image / retag container [DEPRECATED]
     --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default]. [DEPRECATED]
     --volume-from=<host_type>                                  Volume type of sources - docker, k8s, local or docker volume description (dir:mount) [DEPRECATED] 
-    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup. use release-ttl instead [DEPRECATED]
+    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup. use release-ttl instead [DEPRECATED] 
 ```
 ### _Prerequisites_
 
