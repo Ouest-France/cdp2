@@ -23,7 +23,7 @@ Usage:
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--put=<file> | --delete=<file>)
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
-    cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
+    cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>] [--check-only]
         [--use-gitlab-registry] [--use-aws-ecr] [--use-custom-registry] [--use-registry=<registry_name>] 
         [--helm-version=<version>]
         [--image-name=<image_name>] [--image-repository=<repository>] [--image-fullname=<registry/repository/image:tag>]
@@ -366,6 +366,10 @@ class CLIDriver(object):
             self.__callArtifactoryFile(self._context.opt['--image-tag'], upload_file, http_verb)
 
     def __k8s(self):
+
+        if self._context.opt['--check-only']:
+           print("/!\\ ============ Check only mode - Release will not be deployed ===========" )
+
         kubectl_cmd = KubectlCommand(self._cmd, '', True)
         helm_migration = True if self._context.getParamOrEnv("helm-migration") == "true" else False
         
@@ -404,7 +408,7 @@ class CLIDriver(object):
         cleanupHelm2 = False
 
         # Helm2to3 migration
-        if helm_migration:
+        if helm_migration and not self._context.opt['--check-only']:
            try:
               migr_cmd = '/cdp/scripts/migrate_helm.sh -n %s -r %s' % (namespace, release)
               if self._context.opt['--tiller-namespace']:
@@ -634,19 +638,22 @@ class CLIDriver(object):
 
         self.__runConftest(os.path.abspath(conftest_temp_dir), 'all_resources.yaml'.split(','))
 
-        # Install or Upgrade environnement
-        try:
-          self._cmd.run_command('/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release))            
-          helm_cmd.run(command)
-        except OSError as e: 
-          # Recuperation des events pour debuggage
-          kubectl_cmd.run('get events --sort-by=.metadata.creationTimestamp --field-selector=type!=Normal|tail -10')
-          sys.exit("\x1b[31;1mERROR : cdp k8s aborted\x1b[0m")
-
-        # Tout s'est bien passé, on clean la release ou le namespace si dernière release
-        if cleanupHelm2:
-           self._cmd.run_command("/cdp/scripts/cleanup.sh %s -r %s" % ("-n " + namespace if self._context.opt['--tiller-namespace'] else "", release))            
-
+        if self._context.opt['--check-only']:
+           print("Deploy command : %s " %command)
+        else:
+           # Install or Upgrade environnement
+           try:
+             self._cmd.run_command('/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release))            
+             helm_cmd.run(command)
+           except OSError as e: 
+             # Recuperation des events pour debuggage
+             kubectl_cmd.run('get events --sort-by=.metadata.creationTimestamp --field-selector=type!=Normal|tail -10')
+             sys.exit("\x1b[31;1mERROR : cdp k8s aborted\x1b[0m")
+   
+           # Tout s'est bien passé, on clean la release ou le namespace si dernière release
+           if cleanupHelm2:
+              self._cmd.run_command("/cdp/scripts/cleanup.sh %s -r %s" % ("-n " + namespace if self._context.opt['--tiller-namespace'] else "", release))            
+   
         self.__update_environment()
 
     def __create_secret(self,type,envVar,envValue,secretEnvPattern):
