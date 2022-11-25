@@ -65,6 +65,7 @@ Options:
     --build-context=<path>                                     Specify the docker building context [default: .].
     --build-file=<buildFile>                                   Specify the file to build multiples images [default: cdp-build-file.yml].
     --chart-repo=<repo>                                        Path of the repository of default charts
+    --check-only                                               Simulate deployment with templates generation but without deployment in the cluster
     --use-chart=<chart:branch>                                 Name of the pre-defined chart to use. Format : name or name:branch
     --chart-subtype=<subtype>                                  Subtype of chart if needed. Allowed values : php
     --additional-chart-repo=<repo>                             Path of additional repository of default charts
