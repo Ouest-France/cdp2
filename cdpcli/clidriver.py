@@ -316,10 +316,6 @@ class CLIDriver(object):
         #maven_cmd.run(command)
 
     def __docker(self):
-        print("Base repo = %s" % self._context.base_repository)
-        print("Full image name = %s" % self._context.full_image_path)
-        print("RegistryImagePath = %s" % self._context.registryImagePath)
-        print("Repository = %s" % self._context.repository)
         if self._context.opt['--use-registry'] == 'aws-ecr':
             aws_cmd = AwsCommand(self._cmd, '', True)
 
