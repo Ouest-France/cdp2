@@ -107,13 +107,23 @@ class Context(object):
         return self.opt['--image-repository'] if self.opt['--image-repository'] else ( self.project_name if self.opt['--use-registry']=="harbor" else os.environ['CI_PROJECT_PATH'])
 
     @property
+    def compatCDP_REGISTRY(self):
+        root_repo = self.base_repository
+        subrepo=""
+        if self.opt['--image-name']:
+           subrepo = "/" + self.opt['--image-name']
+        if self.opt['--docker-build-target']:
+          subrepo = '%s/%s' % (subrepo, self.opt['--docker-build-target'])
+        return root_repo + subrepo
+
+    @property
     def repository(self):
         root_repo = self.base_repository
         subrepo=""
         if self.opt['--image-name']:
            subrepo = "/" + self.opt['--image-name']
         else:
-            if (self.opt['--use-registry']=="harbor") and not self.isMultiBuildContext():
+            if (self.opt['--use-registry']=="harbor"):
               subrepo = "/" + self.project_name
         if self.opt['--docker-build-target']:
           subrepo = '%s/%s' % (subrepo, self.opt['--docker-build-target'])

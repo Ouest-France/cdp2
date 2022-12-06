@@ -579,6 +579,7 @@ services:
         os.environ['CDP_CONFTEST_REPO'] = "sipa-ouest-france/infrastructure/conftest/infrastructure-repository-conftest"
         os.environ["CDP_CHART_REPO"] = TestCliDriver.chart_repo
 
+
     def test_docker_usedocker_imagetagbranchname_usegitlabregistry_sleep_docker_host(self):
         # Create FakeCommand
         self.fakeauths["auths"] = {}
@@ -2505,10 +2506,10 @@ services:
                         TestCliDriver.cdp_dns_subdomain_staging,
                         TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_name, 
                         TestCliDriver.cdp_harbor_registry,
-                        TestCliDriver.ci_project_name,
+                        TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name,
                         prefix+ "-" +TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_harbor_registry,
-                        TestCliDriver.ci_project_name, 
+                        TestCliDriver.ci_project_name+ "/" + TestCliDriver.ci_project_name, 
                         prefix+ "-" +TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_harbor_registry_user,
                         TestCliDriver.cdp_harbor_registry_read_only_token,

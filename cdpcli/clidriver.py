@@ -316,6 +316,10 @@ class CLIDriver(object):
         #maven_cmd.run(command)
 
     def __docker(self):
+        print("Base repo = %s" % self._context.base_repository)
+        print("Full image name = %s" % self._context.full_image_path)
+        print("RegistryImagePath = %s" % self._context.registryImagePath)
+        print("Repository = %s" % self._context.repository)
         if self._context.opt['--use-registry'] == 'aws-ecr':
             aws_cmd = AwsCommand(self._cmd, '', True)
 
@@ -344,6 +348,7 @@ class CLIDriver(object):
             self.__buildTagAndPushOnDockerRegistry(self.__getTagSha1())
         if self._context.opt['--image-tag']:
             self.__buildTagAndPushOnDockerRegistry(self._context.opt['--image-tag'])
+
 
     def __artifactory(self):
         if self._context.opt['--put']:
@@ -805,7 +810,7 @@ class CLIDriver(object):
     def __getImagesToBuild(self,image, tag):
 
         os.environ['CDP_TAG'] = tag
-        os.environ['CDP_REGISTRY'] = "%s/%s" % (self._context.registry, self._context.registryImagePath)
+        os.environ['CDP_REGISTRY'] = "%s/%s" % (self._context.registry, self._context.compatCDP_REGISTRY)
         os.environ['CDP_REGISTRY_PATH'] = "%s" % (self._context.registry)
         os.environ['CDP_BASE_REPOSITORY'] = "%s" % (self._context.base_repository)
         os.environ['CDP_REPOSITORY'] = "%s" % (self._context.registryImagePath)
