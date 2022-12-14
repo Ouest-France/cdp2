@@ -28,7 +28,7 @@ Usage:
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--put=<file> | --delete=<file>)
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
-    cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
+    cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>] [--check-only]
         [--use-gitlab-registry] [--use-aws-ecr] [--use-custom-registry] [--use-registry=<registry_name>] 
         [--helm-version=<version>]
         [--image-name=<image_name>] [--image-repository=<repository>] [--image-fullname=<registry/repository/image:tag>]
@@ -38,7 +38,9 @@ Usage:
         [(--create-gitlab-secret-hook)]
         [(--use-docker-compose)] 
         [--build-file=<buildFile>]
-        [--values=<files>]
+        [--values=<files>] [--custom-values=<values>]
+        [--team=<team>]
+        [--logindex=<logindex>]
         [--delete-labels=<minutes>|--release-ttl=<minutes>]
         [--namespace-project-name | --namespace-name=<namespace_name> ] [--namespace-project-branch-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
@@ -70,6 +72,7 @@ Options:
     --build-context=<path>                                     Specify the docker building context [default: .].
     --build-file=<buildFile>                                   Specify the file to build multiples images [default: cdp-build-file.yml].
     --chart-repo=<repo>                                        Path of the repository of default charts
+    --check-only                                               Simulate deployment with templates generation but without deployment in the cluster
     --use-chart=<chart:branch>                                 Name of the pre-defined chart to use. Format : name or name:branch
     --chart-subtype=<subtype>                                  Subtype of chart if needed. Allowed values : php
     --additional-chart-repo=<repo>                             Path of additional repository of default charts
@@ -79,6 +82,7 @@ Options:
     --create-default-helm                                      Create default helm for simple project (One docker image).
     --create-gitlab-secret                                     Create a secret from gitlab env starting with CDP_SECRET_<Environnement>_ where <Environnement> is the gitlab env from the job ( or CI_ENVIRONNEMENT_NAME )
     --create-gitlab-secret-hook                                Create gitlab secret with hook
+    --custom-values=<values>                                   Additional custom values to pass to Helm templates. Delimited comma key=value values. (Ex : replicaCount=2,service.enabled=false)
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
@@ -101,6 +105,7 @@ Options:
     --ingress-tlsSecretNamespace=<secretNamespace>             Namespace of the tls secret. . Use CDP_INGRESS_TLSSECRETNAMESPACE if empty     
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
+    --logindex=<logindex>                                      Name of the ES indice to store pod logs. $CDP_LOGINDEX is used if empty.
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
     --namespace-name=<namespace_name>                          Use namespace_name to create k8s namespace.
@@ -117,6 +122,7 @@ Options:
     --release-project-name                                     Force the release to be created with the name of the Gitlab project
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
+    --team=<team>                                              Name of the team. $CDP_TEAM is used if empty.
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
     --use-docker                                               Use docker to build / push image [default].
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
@@ -154,8 +160,6 @@ sonar:
 docker:
  --use-docker:
     - File Dockerfile required at the root of the project.
- --use-docker-compose:
-    - File docker-compose.yml required at the root of the project.
  --login-registry=<registry_name>:
     - CDP_<REGISTRY_NAME>_REGISTRY (Gitlab-runner env var) – docker registry (host:port).
     - CDP_<REGISTRY_NAME>_REGISTRY_TOKEN (Gitlab-runner env var) – Access token used for authentication on docker registry.
@@ -265,7 +269,7 @@ services:
       context: ./distribution/nginx
       dockerfile: Dockerfile
   php:
-    image: ${CDP_REGISTRY_PATH:-local}/${CDP_BASE_REPOSITORY:-local}/my-php-project-name:${CDP_TAG:-latest}
+    image: ${CDP_REGISTRY_PATH:-local}/${CDP_BASE_REPOSITORY:-local}/php/my-php-project-name:${CDP_TAG:-latest}
     build:
       context: ./distribution/php7-fpm
       dockerfile: Dockerfile

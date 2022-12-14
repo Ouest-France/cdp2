@@ -182,161 +182,6 @@ class TestCliDriver(unittest.TestCase):
     env_cdp_registry = 'CDP_REGISTRY'
     fakeauths = {}
     fakeauths["auths"] = {}
-
-    cronjob_yaml_without_secret = """---
-    kind: CronJob
-    apiVersion: batch/v1beta1
-    metadata:
-      name: configuration-docker-zabbix-sender
-      labels:
-        app: configuration-docker-zabbix-sender
-        chart: configuration-docker-zabbix-sender-0.1.0
-        release: cdzs950-test-cdp
-    spec:
-      schedule: "*/5 * * * *"
-      concurrencyPolicy: Forbid
-      suspend: false
-      jobTemplate:
-        metadata: {}
-        spec:
-          template:
-            metadata: {}
-            spec:
-              containers:
-              - {}
-              schedulerName: default-scheduler
-      successfulJobsHistoryLimit: 3
-      failedJobsHistoryLimit: 1
-    """
-    cronjob_yaml_with_secret = """---
-    kind: CronJob
-    apiVersion: batch/v1beta1
-    metadata:
-      name: configuration-docker-zabbix-sender
-      labels:
-        app: configuration-docker-zabbix-sender
-        chart: configuration-docker-zabbix-sender-0.1.0
-        release: cdzs950-test-cdp
-    spec:
-      schedule: "*/5 * * * *"
-      concurrencyPolicy: Forbid
-      suspend: false
-      jobTemplate:
-        metadata: {}
-        spec:
-          template:
-            metadata: {}
-            spec:
-              containers:
-              - {}
-              imagePullSecrets:
-              - name: cdp-registry-gitlab.ouest-france.fr-cdzs950-test-cdp
-              schedulerName: default-scheduler
-      successfulJobsHistoryLimit: 3
-      failedJobsHistoryLimit: 1
-    """
-    deployment_yaml_without_secret = """---
-    apiVersion: extensions/v1beta1
-    kind: Deployment
-    metadata:
-      name: helloworld
-      labels:
-        app: helloworld
-        chart: helloworld-0.1.0
-        release: release-name
-        heritage: Tiller
-    spec:
-      replicas: 2
-      strategy:
-        type: RollingUpdate
-        rollingUpdate:
-          maxSurge: 0
-          maxUnavailable: 2
-      minReadySeconds: 60
-      revisionHistoryLimit: 2
-      template:
-        metadata:
-          labels:
-            app: helloworld
-            release: release-name
-        spec:
-          containers:
-            - name: helloworld-sha-01234567
-              image: registry.gitlab.com/helloworld/helloworld:0123456789abcdef0123456789abcdef01234567
-              imagePullPolicy: IfNotPresent
-              ports:
-                - containerPort: 8080
-              livenessProbe:
-                httpGet:
-                  path: /
-                  port: 8080
-                initialDelaySeconds: 60
-              readinessProbe:
-                httpGet:
-                  path: /
-                  port: 8080
-                initialDelaySeconds: 20
-              resources:
-                limits:
-                  cpu: 1
-                  memory: 1Gi
-                requests:
-                  cpu: 0.25
-                  memory: 1Gi
-    """
-
-    deployment_yaml_with_secret = """---
-    apiVersion: extensions/v1beta1
-    kind: Deployment
-    metadata:
-      name: helloworld
-      labels:
-        app: helloworld
-        chart: helloworld-0.1.0
-        release: release-name
-        heritage: Tiller
-    spec:
-      replicas: 2
-      strategy:
-        type: RollingUpdate
-        rollingUpdate:
-          maxSurge: 0
-          maxUnavailable: 2
-      minReadySeconds: 60
-      revisionHistoryLimit: 2
-      template:
-        metadata:
-          labels:
-            app: helloworld
-            release: release-name
-        spec:
-          containers:
-            - name: helloworld-sha-01234567
-              image: registry.gitlab.com/helloworld/helloworld:0123456789abcdef0123456789abcdef01234567
-              imagePullPolicy: IfNotPresent
-              ports:
-                - containerPort: 8080
-              livenessProbe:
-                httpGet:
-                  path: /
-                  port: 8080
-                initialDelaySeconds: 60
-              readinessProbe:
-                httpGet:
-                  path: /
-                  port: 8080
-                initialDelaySeconds: 20
-              resources:
-                limits:
-                  cpu: 1
-                  memory: 1Gi
-                requests:
-                  cpu: 0.25
-                  memory: 1Gi
-          imagePullSecrets:
-           - name: cdp-registry-gitlab.ouest-france.fr-cdzs950-test-cdp
-    """
-
     registry_secret_json = """{
       "apiVersion": "v1",
       "data": {
@@ -2323,7 +2168,7 @@ services:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.name=%s --set image.base_repository=%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --set team=SIT --set deployment.logindex=monindex --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.name=%s --set image.base_repository=%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --set team=SIT --set deployment.logindex=monindex --set replicaCount=2 --set service.enabled=false --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -2352,7 +2197,7 @@ services:
                         namespace)
                         , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
             ]
-            self.__run_CLIDriver({ 'k8s', '--use-registry=harbor', '--release-project-name','--namespace-name=%s' % namespace, '--team=SIT', '--logindex=monindex', '--use-chart=default','--values=%s' % values}, verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--use-registry=harbor', '--release-project-name','--namespace-name=%s' % namespace, '--custom-values=replicaCount=2,service.enabled=false', '--team=SIT', '--logindex=monindex', '--use-chart=default','--values=%s' % values}, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
 
             mock_isfile.assert_has_calls([call('%s/values.yaml' % deploy_spec_dir), call('%s/Chart.yaml' % deploy_spec_dir)])
@@ -3204,38 +3049,6 @@ services:
         except ValueError as e:
             # Ok beacause previous command return error.
              print(e)
-
-    def test_function_AddImagePullSecret_Cronjob(self):
-        imagePullSecret = "cdp-registry-gitlab.ouest-france.fr-cdzs950-test-cdp"
-        docs = []
-        for raw_doc in TestCliDriver.cronjob_yaml_without_secret.split('\n---'):
-            docs.append(yaml.safe_load(raw_doc))
-        docs_target=[]
-        for raw_doc in TestCliDriver.cronjob_yaml_with_secret.split('\n---'):
-            docs_target.append(yaml.safe_load(raw_doc))
-        LOG.info(docs_target)
-        output=[]
-        for doc in docs:
-            output.append(CLIDriver.addImageSecret(doc,imagePullSecret))
-        LOG.info(output)
-        if(output != docs_target) :
-           raise Exception("Cronjob Output are not identical")
-
-    def test_function_AddImagePullSecret_Deployement(self):
-        imagePullSecret = "cdp-registry-gitlab.ouest-france.fr-cdzs950-test-cdp"
-        docs = []
-        for raw_doc in TestCliDriver.deployment_yaml_without_secret.split('\n---'):
-            docs.append(yaml.safe_load(raw_doc))
-        docs_target=[]
-        for raw_doc in TestCliDriver.deployment_yaml_with_secret.split('\n---'):
-            docs_target.append(yaml.safe_load(raw_doc))
-        LOG.info(docs_target)
-        output=[]
-        for doc in docs:
-            output.append(CLIDriver.addImageSecret(doc,imagePullSecret))
-        LOG.info(output)
-        if(output != docs_target) :
-           raise Exception("Deployement Output are not identical")
 
     def __run_CLIDriver(self, args, verif_cmd, docker_host = 'unix:///var/run/docker.sock', env_vars = {}):
         cdp_docker_host_internal = '172.17.0.1'

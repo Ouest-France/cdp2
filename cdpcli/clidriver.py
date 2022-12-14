@@ -33,7 +33,7 @@ Usage:
         [(--create-gitlab-secret-hook)]
         [(--use-docker-compose)] 
         [--build-file=<buildFile>]
-        [--values=<files>]
+        [--values=<files>] [--custom-values=<values>]
         [--team=<team>]
         [--logindex=<logindex>]
         [--delete-labels=<minutes>|--release-ttl=<minutes>]
@@ -77,6 +77,7 @@ Options:
     --create-default-helm                                      Create default helm for simple project (One docker image).
     --create-gitlab-secret                                     Create a secret from gitlab env starting with CDP_SECRET_<Environnement>_ where <Environnement> is the gitlab env from the job ( or CI_ENVIRONNEMENT_NAME )
     --create-gitlab-secret-hook                                Create gitlab secret with hook
+    --custom-values=<values>                                   Additional custom values to pass to Helm templates. Delimited comma key=value values. (Ex : replicaCount=2,service.enabled=false)
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
@@ -526,13 +527,17 @@ class CLIDriver(object):
         alternateIngressClassName = self.__getAlternateIngressClassName()
         if (alternateIngressClassName):
             set_command = '%s --set ingress.alternateIngressClassName=%s' % (set_command, alternateIngressClassName)
+
+        image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
+        image_pull_secret_value = image_pull_secret_value.replace(':', '-')
+
         # Need to add secret file for docker registry
         if not self._context.opt['--use-registry'] == 'aws-ecr' and not self._context.opt['--use-registry'] == 'none':
             # Add secret (Only if secret is not exist )
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
             set_command = '%s --set image.credentials.username=%s' % (set_command, self._context.registry_user_ro)
             set_command = '%s --set image.credentials.password=%s' % (set_command, self._context.string_protected(self._context.registry_token_ro))
-            set_command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (set_command, self._context.registry.replace(':', '-'),release)
+            set_command = '%s --set image.imagePullSecrets=%s' % (set_command, image_pull_secret_value)
 
         if self._context.opt['--create-gitlab-secret'] or self._context.opt['--create-gitlab-secret-hook'] :
             if os.getenv('CI_ENVIRONMENT_NAME', None) is None :
@@ -577,7 +582,7 @@ class CLIDriver(object):
             template_command = 'template %s' % (self._context.opt['--deploy-spec-dir'])
         
         template_command = '%s %s' % (template_command, set_command)
-
+        template_command = self.add_custom_values(template_command)
         if self._context.opt['--values']:
             valuesFiles = self._context.opt['--values'].strip().split(',')
             values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
@@ -602,9 +607,6 @@ class CLIDriver(object):
             LOG.error(str(e))        
         helm_cmd.run(template_command)
 
-        image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
-        image_pull_secret_value = image_pull_secret_value.replace(':', '-')
-
         with open(tmp_templating_file, 'r') as stream:
             docs = list(yaml.load_all(stream))
             final_docs = []
@@ -621,11 +623,12 @@ class CLIDriver(object):
                             doc = CLIDriver.addMonitoringLabel(doc, False)
                         else:
                             doc = CLIDriver.addMonitoringLabel(doc, True)
-                    if not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
-                        doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
+                    # Ajout du champ imagePulLSecrets seulement si par les charts par défaut car déjà prévu. Retro-compatiibilité
+                    if not self._context.opt['--use-chart']:
+                        if not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
+                           doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
                     
                     LOG.verbose(doc)
-
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
             LOG.info(yaml.dump_all(final_docs))
             yaml.dump_all(final_docs, outfile)
@@ -679,7 +682,7 @@ class CLIDriver(object):
             self._cmd.run_secret_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-%s.yaml' % (envVar[len(secretEnvPattern):],envValue,self._context.opt['--deploy-spec-dir'],type+"-hook"))
 
     @staticmethod
-    def addImageSecret(doc,image_pull_secret_value):
+    def addImageSecret(doc,image_pull_secret_value):        
         if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet' or doc['kind'] == 'Job':
             yaml_doc = doc['spec']['template']['spec']
             if 'imagePullSecrets' in yaml_doc and yaml_doc['imagePullSecrets']:
@@ -1088,3 +1091,13 @@ class CLIDriver(object):
            return '%s --set %s=%s' % (command, param, value)        
         else:
            return command
+
+    def add_custom_values(self, command):
+       values = self._context.getParamOrEnv("custom-values")
+       if values is not None:
+          aValues = values.split(",")
+          for value in aValues:
+            if ("=" in value):
+               aValue = value.split("=")
+               command = '%s --set %s=%s' % (command, aValue[0], aValue[1])        
+       return command
