@@ -34,6 +34,8 @@ Usage:
         [(--use-docker-compose)] 
         [--build-file=<buildFile>]
         [--values=<files>]
+        [--team=<team>]
+        [--logindex=<logindex>]
         [--delete-labels=<minutes>|--release-ttl=<minutes>]
         [--namespace-project-name | --namespace-name=<namespace_name> ] [--namespace-project-branch-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
@@ -97,6 +99,7 @@ Options:
     --ingress-tlsSecretNamespace=<secretNamespace>             Namespace of the tls secret. . Use CDP_INGRESS_TLSSECRETNAMESPACE if empty     
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
+    --logindex=<logindex>                                      Name of the ES indice to store pod logs. $CDP_LOGINDEX is used if empty.
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
     --namespace-name=<namespace_name>                          Use namespace_name to create k8s namespace.
@@ -113,6 +116,7 @@ Options:
     --release-project-name                                     Force the release to be created with the name of the Gitlab project
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
+    --team=<team>                                              Name of the team. $CDP_TEAM is used if empty.
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
     --use-docker                                               Use docker to build / push image [default].
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
@@ -542,6 +546,9 @@ class CLIDriver(object):
                 if envVar.startswith(fileSecretEnvPattern.upper(), 0):
                     self.__create_secret("file-secret", envVar, envValue, fileSecretEnvPattern)
 
+        set_command = self.add_value_to_command_if_not_empty(set_command, "team", self._context.getParamOrEnv("team"))
+        set_command = self.add_value_to_command_if_not_empty(set_command, "deployment.logindex", self._context.getParamOrEnv("logindex"))
+
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
         
@@ -608,7 +615,6 @@ class CLIDriver(object):
                        doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--release-ttl'] else "false"
 
                     final_docs.append(doc)
-                    CLIDriver.addGitlabLabels(doc)
                     #Manage Deployement and
                     if os.getenv('CDP_MONITORING')and os.getenv('CDP_MONITORING', 'TRUE').upper() != "FALSE":
                         if os.getenv('CDP_ALERTING', 'TRUE').upper()=="FALSE":
@@ -739,7 +745,7 @@ class CLIDriver(object):
         # Utilisation de Skopeo
         self._cmd.run_command('skopeo copy docker://%s docker://%s' % (source_image_tag, dest_image_tag))
       except OSError as e:
-               print('************************** SKPEO *******************************')
+               print('************************** SKOPEO *******************************')
                print(e)
                print('****************************************************************')
                raise e          
@@ -1077,3 +1083,8 @@ class CLIDriver(object):
             if nbExclusiveOptions < minOccurrences:
                sys.exit("%s of %s is required (%s/%s)" % (minOccurrences, ",".join(options),minOccurrences,nbExclusiveOptions))
                sys.exit("\x1b[31;1mERROR : %s of %s is required (%s/%s)\x1b[0m"% (minOccurrences, ",".join(options),minOccurrences,nbExclusiveOptions))               
+    def add_value_to_command_if_not_empty(self, command, param, value):
+        if value is not None:
+           return '%s --set %s=%s' % (command, param, value)        
+        else:
+           return command
