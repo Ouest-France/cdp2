@@ -33,7 +33,9 @@ Usage:
         [(--create-gitlab-secret-hook)]
         [(--use-docker-compose)] 
         [--build-file=<buildFile>]
-        [--values=<files>]
+        [--values=<files>] [--custom-values=<values>]
+        [--team=<team>]
+        [--logindex=<logindex>]
         [--delete-labels=<minutes>|--release-ttl=<minutes>]
         [--namespace-project-name | --namespace-name=<namespace_name> ] [--namespace-project-branch-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
@@ -75,6 +77,7 @@ Options:
     --create-default-helm                                      Create default helm for simple project (One docker image).
     --create-gitlab-secret                                     Create a secret from gitlab env starting with CDP_SECRET_<Environnement>_ where <Environnement> is the gitlab env from the job ( or CI_ENVIRONNEMENT_NAME )
     --create-gitlab-secret-hook                                Create gitlab secret with hook
+    --custom-values=<values>                                   Additional custom values to pass to Helm templates. Delimited comma key=value values. (Ex : replicaCount=2,service.enabled=false)
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
@@ -97,6 +100,7 @@ Options:
     --ingress-tlsSecretNamespace=<secretNamespace>             Namespace of the tls secret. . Use CDP_INGRESS_TLSSECRETNAMESPACE if empty     
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
+    --logindex=<logindex>                                      Name of the ES indice to store pod logs. $CDP_LOGINDEX is used if empty.
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
     --namespace-name=<namespace_name>                          Use namespace_name to create k8s namespace.
@@ -113,6 +117,7 @@ Options:
     --release-project-name                                     Force the release to be created with the name of the Gitlab project
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
+    --team=<team>                                              Name of the team. $CDP_TEAM is used if empty.
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
     --use-docker                                               Use docker to build / push image [default].
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
@@ -522,13 +527,17 @@ class CLIDriver(object):
         alternateIngressClassName = self.__getAlternateIngressClassName()
         if (alternateIngressClassName):
             set_command = '%s --set ingress.alternateIngressClassName=%s' % (set_command, alternateIngressClassName)
+
+        image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
+        image_pull_secret_value = image_pull_secret_value.replace(':', '-')
+
         # Need to add secret file for docker registry
         if not self._context.opt['--use-registry'] == 'aws-ecr' and not self._context.opt['--use-registry'] == 'none':
             # Add secret (Only if secret is not exist )
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
             set_command = '%s --set image.credentials.username=%s' % (set_command, self._context.registry_user_ro)
             set_command = '%s --set image.credentials.password=%s' % (set_command, self._context.string_protected(self._context.registry_token_ro))
-            set_command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (set_command, self._context.registry.replace(':', '-'),release)
+            set_command = '%s --set image.imagePullSecrets=%s' % (set_command, image_pull_secret_value)
 
         if self._context.opt['--create-gitlab-secret'] or self._context.opt['--create-gitlab-secret-hook'] :
             if os.getenv('CI_ENVIRONMENT_NAME', None) is None :
@@ -541,6 +550,9 @@ class CLIDriver(object):
                     self.__create_secret("secret",envVar,envValue,secretEnvPattern)
                 if envVar.startswith(fileSecretEnvPattern.upper(), 0):
                     self.__create_secret("file-secret", envVar, envValue, fileSecretEnvPattern)
+
+        set_command = self.add_value_to_command_if_not_empty(set_command, "team", self._context.getParamOrEnv("team"))
+        set_command = self.add_value_to_command_if_not_empty(set_command, "deployment.logindex", self._context.getParamOrEnv("logindex"))
 
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
@@ -570,7 +582,7 @@ class CLIDriver(object):
             template_command = 'template %s' % (self._context.opt['--deploy-spec-dir'])
         
         template_command = '%s %s' % (template_command, set_command)
-
+        template_command = self.add_custom_values(template_command)
         if self._context.opt['--values']:
             valuesFiles = self._context.opt['--values'].strip().split(',')
             values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
@@ -595,9 +607,6 @@ class CLIDriver(object):
             LOG.error(str(e))        
         helm_cmd.run(template_command)
 
-        image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
-        image_pull_secret_value = image_pull_secret_value.replace(':', '-')
-
         with open(tmp_templating_file, 'r') as stream:
             docs = list(yaml.load_all(stream))
             final_docs = []
@@ -608,18 +617,18 @@ class CLIDriver(object):
                        doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--release-ttl'] else "false"
 
                     final_docs.append(doc)
-                    CLIDriver.addGitlabLabels(doc)
                     #Manage Deployement and
                     if os.getenv('CDP_MONITORING')and os.getenv('CDP_MONITORING', 'TRUE').upper() != "FALSE":
                         if os.getenv('CDP_ALERTING', 'TRUE').upper()=="FALSE":
                             doc = CLIDriver.addMonitoringLabel(doc, False)
                         else:
                             doc = CLIDriver.addMonitoringLabel(doc, True)
-                    if not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
-                        doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
+                    # Ajout du champ imagePulLSecrets seulement si par les charts par défaut car déjà prévu. Retro-compatiibilité
+                    if not self._context.opt['--use-chart']:
+                        if not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
+                           doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
                     
                     LOG.verbose(doc)
-
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
             LOG.info(yaml.dump_all(final_docs))
             yaml.dump_all(final_docs, outfile)
@@ -673,7 +682,7 @@ class CLIDriver(object):
             self._cmd.run_secret_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-%s.yaml' % (envVar[len(secretEnvPattern):],envValue,self._context.opt['--deploy-spec-dir'],type+"-hook"))
 
     @staticmethod
-    def addImageSecret(doc,image_pull_secret_value):
+    def addImageSecret(doc,image_pull_secret_value):        
         if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet' or doc['kind'] == 'Job':
             yaml_doc = doc['spec']['template']['spec']
             if 'imagePullSecrets' in yaml_doc and yaml_doc['imagePullSecrets']:
@@ -739,7 +748,7 @@ class CLIDriver(object):
         # Utilisation de Skopeo
         self._cmd.run_command('skopeo copy docker://%s docker://%s' % (source_image_tag, dest_image_tag))
       except OSError as e:
-               print('************************** SKPEO *******************************')
+               print('************************** SKOPEO *******************************')
                print(e)
                print('****************************************************************')
                raise e          
@@ -1077,3 +1086,18 @@ class CLIDriver(object):
             if nbExclusiveOptions < minOccurrences:
                sys.exit("%s of %s is required (%s/%s)" % (minOccurrences, ",".join(options),minOccurrences,nbExclusiveOptions))
                sys.exit("\x1b[31;1mERROR : %s of %s is required (%s/%s)\x1b[0m"% (minOccurrences, ",".join(options),minOccurrences,nbExclusiveOptions))               
+    def add_value_to_command_if_not_empty(self, command, param, value):
+        if value is not None:
+           return '%s --set %s=%s' % (command, param, value)        
+        else:
+           return command
+
+    def add_custom_values(self, command):
+       values = self._context.getParamOrEnv("custom-values")
+       if values is not None:
+          aValues = values.split(",")
+          for value in aValues:
+            if ("=" in value):
+               aValue = value.split("=")
+               command = '%s --set %s=%s' % (command, aValue[0], aValue[1])        
+       return command

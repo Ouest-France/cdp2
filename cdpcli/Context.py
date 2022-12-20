@@ -127,7 +127,6 @@ class Context(object):
               subrepo = "/" + self.project_name
         if self.opt['--docker-build-target']:
           subrepo = '%s/%s' % (subrepo, self.opt['--docker-build-target'])
-
         return root_repo + subrepo
 
 

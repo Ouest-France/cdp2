@@ -182,161 +182,6 @@ class TestCliDriver(unittest.TestCase):
     env_cdp_registry = 'CDP_REGISTRY'
     fakeauths = {}
     fakeauths["auths"] = {}
-
-    cronjob_yaml_without_secret = """---
-    kind: CronJob
-    apiVersion: batch/v1beta1
-    metadata:
-      name: configuration-docker-zabbix-sender
-      labels:
-        app: configuration-docker-zabbix-sender
-        chart: configuration-docker-zabbix-sender-0.1.0
-        release: cdzs950-test-cdp
-    spec:
-      schedule: "*/5 * * * *"
-      concurrencyPolicy: Forbid
-      suspend: false
-      jobTemplate:
-        metadata: {}
-        spec:
-          template:
-            metadata: {}
-            spec:
-              containers:
-              - {}
-              schedulerName: default-scheduler
-      successfulJobsHistoryLimit: 3
-      failedJobsHistoryLimit: 1
-    """
-    cronjob_yaml_with_secret = """---
-    kind: CronJob
-    apiVersion: batch/v1beta1
-    metadata:
-      name: configuration-docker-zabbix-sender
-      labels:
-        app: configuration-docker-zabbix-sender
-        chart: configuration-docker-zabbix-sender-0.1.0
-        release: cdzs950-test-cdp
-    spec:
-      schedule: "*/5 * * * *"
-      concurrencyPolicy: Forbid
-      suspend: false
-      jobTemplate:
-        metadata: {}
-        spec:
-          template:
-            metadata: {}
-            spec:
-              containers:
-              - {}
-              imagePullSecrets:
-              - name: cdp-registry-gitlab.ouest-france.fr-cdzs950-test-cdp
-              schedulerName: default-scheduler
-      successfulJobsHistoryLimit: 3
-      failedJobsHistoryLimit: 1
-    """
-    deployment_yaml_without_secret = """---
-    apiVersion: extensions/v1beta1
-    kind: Deployment
-    metadata:
-      name: helloworld
-      labels:
-        app: helloworld
-        chart: helloworld-0.1.0
-        release: release-name
-        heritage: Tiller
-    spec:
-      replicas: 2
-      strategy:
-        type: RollingUpdate
-        rollingUpdate:
-          maxSurge: 0
-          maxUnavailable: 2
-      minReadySeconds: 60
-      revisionHistoryLimit: 2
-      template:
-        metadata:
-          labels:
-            app: helloworld
-            release: release-name
-        spec:
-          containers:
-            - name: helloworld-sha-01234567
-              image: registry.gitlab.com/helloworld/helloworld:0123456789abcdef0123456789abcdef01234567
-              imagePullPolicy: IfNotPresent
-              ports:
-                - containerPort: 8080
-              livenessProbe:
-                httpGet:
-                  path: /
-                  port: 8080
-                initialDelaySeconds: 60
-              readinessProbe:
-                httpGet:
-                  path: /
-                  port: 8080
-                initialDelaySeconds: 20
-              resources:
-                limits:
-                  cpu: 1
-                  memory: 1Gi
-                requests:
-                  cpu: 0.25
-                  memory: 1Gi
-    """
-
-    deployment_yaml_with_secret = """---
-    apiVersion: extensions/v1beta1
-    kind: Deployment
-    metadata:
-      name: helloworld
-      labels:
-        app: helloworld
-        chart: helloworld-0.1.0
-        release: release-name
-        heritage: Tiller
-    spec:
-      replicas: 2
-      strategy:
-        type: RollingUpdate
-        rollingUpdate:
-          maxSurge: 0
-          maxUnavailable: 2
-      minReadySeconds: 60
-      revisionHistoryLimit: 2
-      template:
-        metadata:
-          labels:
-            app: helloworld
-            release: release-name
-        spec:
-          containers:
-            - name: helloworld-sha-01234567
-              image: registry.gitlab.com/helloworld/helloworld:0123456789abcdef0123456789abcdef01234567
-              imagePullPolicy: IfNotPresent
-              ports:
-                - containerPort: 8080
-              livenessProbe:
-                httpGet:
-                  path: /
-                  port: 8080
-                initialDelaySeconds: 60
-              readinessProbe:
-                httpGet:
-                  path: /
-                  port: 8080
-                initialDelaySeconds: 20
-              resources:
-                limits:
-                  cpu: 1
-                  memory: 1Gi
-                requests:
-                  cpu: 0.25
-                  memory: 1Gi
-          imagePullSecrets:
-           - name: cdp-registry-gitlab.ouest-france.fr-cdzs950-test-cdp
-    """
-
     registry_secret_json = """{
       "apiVersion": "v1",
       "data": {
@@ -1186,8 +1031,7 @@ services:
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
@@ -1253,8 +1097,7 @@ services:
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
@@ -1326,8 +1169,7 @@ services:
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
@@ -1399,8 +1241,7 @@ services:
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
@@ -1472,8 +1313,7 @@ services:
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
@@ -1532,8 +1372,7 @@ services:
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
@@ -1764,8 +1603,7 @@ services:
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
@@ -1835,8 +1673,7 @@ services:
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
@@ -1906,8 +1743,7 @@ services:
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
@@ -1984,8 +1820,7 @@ services:
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
@@ -2064,8 +1899,7 @@ services:
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
@@ -2142,8 +1976,7 @@ services:
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
@@ -2221,8 +2054,7 @@ services:
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
  
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
@@ -2298,9 +2130,80 @@ services:
             mock_makedirs.assert_has_calls([call('%s/templates'% deploy_spec_dir, 511, True), call('%s/templates' % final_deploy_spec_dir)],True)
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
-        # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
+    @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
+    @patch('cdpcli.clidriver.os.path.isfile', return_value=False)
+    @patch('cdpcli.clidriver.os.makedirs')
+    @patch("cdpcli.clidriver.yaml.dump")
+    @patch("cdpcli.clidriver.shutil.copyfile")
+    @patch("cdpcli.clidriver.yaml.dump_all")
+    @freeze_time("2019-06-25 11:55:27")
+    def test_k8s_harbor_customnamespace_with_logindex(self, mock_dump_all, mock_copyfile, mock_dump, mock_makedirs, mock_isfile, mock_isdir, mock_Gitlab):
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab)
+
+        # Create FakeCommand
+        namespace = "infrastructure-test-namespace"
+        namespace = namespace.replace('_', '-')[:63]
+        release = TestCliDriver.ci_project_name[:53]
+        staging_file = 'values.staging.yaml'
+        int_file = 'values.int.yaml'
+        values = ','.join([staging_file, int_file])
+        deploy_spec_dir = 'charts'
+        final_deploy_spec_dir = '%s_final' % deploy_spec_dir
+        tmp_chart_dir="/cdp/k8s/charts"
+        date_now = datetime.datetime.utcnow()
+        deleteDuration=240
+        self.fakeauths["auths"] = {}
+        mock_makedirs.maxDiff = None
+        m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
+        mock_all_resources_yaml = mock_open()
+        #m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
+        with patch("builtins.open", m):
+            verif_cmd = [
+                {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
+                {'cmd': 'curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz?sha=master | tar zx --wildcards --strip 2 -C %s \'*/default\''
+                  % (TestCliDriver.cdp_gitlab_api_token, TestCliDriver.cdp_gitlab_api_url, TestCliDriver.chart_repo, tmp_chart_dir), 'output': 'unnecessary'},
+                {'cmd': 'cp -R /cdp/k8s/charts/* charts/', 'output': 'unnecessary'},
+                {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
+                {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.name=%s --set image.base_repository=%s --set image.fullname=%s/%s:%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --set team=SIT --set deployment.logindex=monindex --set replicaCount=2 --set service.enabled=false --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
+                        namespace,
+                        release,
+                        TestCliDriver.cdp_dns_subdomain_staging,
+                        TestCliDriver.cdp_dns_subdomain_staging,
+                        TestCliDriver.ci_commit_sha[:8], TestCliDriver.ci_project_name, TestCliDriver.ci_project_name, 
+                        TestCliDriver.cdp_harbor_registry,
+                        TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name,
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.cdp_harbor_registry,
+                        TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name,
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.cdp_harbor_registry_user,
+                        TestCliDriver.cdp_harbor_registry_read_only_token,
+                        TestCliDriver.cdp_harbor_registry.replace(':', '-'),
+                        release,
+                        staging_file,
+                        int_file,
+                        namespace,
+                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release), 'output': 'unnecessary'},
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
+                    % (release,
+                        final_deploy_spec_dir,
+                        namespace)
+                        , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
+            ]
+            self.__run_CLIDriver({ 'k8s', '--use-registry=harbor', '--release-project-name','--namespace-name=%s' % namespace, '--custom-values=replicaCount=2,service.enabled=false', '--team=SIT', '--logindex=monindex', '--use-chart=default','--values=%s' % values}, verif_cmd,
+                env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
+
+            mock_isfile.assert_has_calls([call('%s/values.yaml' % deploy_spec_dir), call('%s/Chart.yaml' % deploy_spec_dir)])
+            mock_makedirs.assert_has_calls([call('%s/templates'% deploy_spec_dir, 511, True), call('%s/templates' % final_deploy_spec_dir)],True)
+            mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
@@ -2378,8 +2281,7 @@ services:
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
@@ -2453,8 +2355,7 @@ services:
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
@@ -2533,8 +2434,7 @@ services:
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
@@ -2607,8 +2507,7 @@ services:
             mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
-        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
@@ -3150,38 +3049,6 @@ services:
         except ValueError as e:
             # Ok beacause previous command return error.
              print(e)
-
-    def test_function_AddImagePullSecret_Cronjob(self):
-        imagePullSecret = "cdp-registry-gitlab.ouest-france.fr-cdzs950-test-cdp"
-        docs = []
-        for raw_doc in TestCliDriver.cronjob_yaml_without_secret.split('\n---'):
-            docs.append(yaml.safe_load(raw_doc))
-        docs_target=[]
-        for raw_doc in TestCliDriver.cronjob_yaml_with_secret.split('\n---'):
-            docs_target.append(yaml.safe_load(raw_doc))
-        LOG.info(docs_target)
-        output=[]
-        for doc in docs:
-            output.append(CLIDriver.addImageSecret(doc,imagePullSecret))
-        LOG.info(output)
-        if(output != docs_target) :
-           raise Exception("Cronjob Output are not identical")
-
-    def test_function_AddImagePullSecret_Deployement(self):
-        imagePullSecret = "cdp-registry-gitlab.ouest-france.fr-cdzs950-test-cdp"
-        docs = []
-        for raw_doc in TestCliDriver.deployment_yaml_without_secret.split('\n---'):
-            docs.append(yaml.safe_load(raw_doc))
-        docs_target=[]
-        for raw_doc in TestCliDriver.deployment_yaml_with_secret.split('\n---'):
-            docs_target.append(yaml.safe_load(raw_doc))
-        LOG.info(docs_target)
-        output=[]
-        for doc in docs:
-            output.append(CLIDriver.addImageSecret(doc,imagePullSecret))
-        LOG.info(output)
-        if(output != docs_target) :
-           raise Exception("Deployement Output are not identical")
 
     def __run_CLIDriver(self, args, verif_cmd, docker_host = 'unix:///var/run/docker.sock', env_vars = {}):
         cdp_docker_host_internal = '172.17.0.1'
