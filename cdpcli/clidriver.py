@@ -35,7 +35,7 @@ Usage:
         [--build-file=<buildFile>]
         [--values=<files>] [--custom-values=<values>]
         [--team=<team>]
-        [--logindex=<logindex>]
+        [--logindex=<logindex>] [--logtopic=<logtopic>]
         [--delete-labels=<minutes>|--release-ttl=<minutes>]
         [--namespace-project-name | --namespace-name=<namespace_name> ] [--namespace-project-branch-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
@@ -101,6 +101,7 @@ Options:
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --logindex=<logindex>                                      Name of the ES indice to store pod logs. $CDP_LOGINDEX is used if empty.
+    --logtopic=<logtopic>                                      Name of the Kafka topic to send pod logs. $CDP_LOGTOPIC is used if empty.
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
     --namespace-name=<namespace_name>                          Use namespace_name to create k8s namespace.
@@ -553,6 +554,7 @@ class CLIDriver(object):
 
         set_command = self.add_value_to_command_if_not_empty(set_command, "team", self._context.getParamOrEnv("team"))
         set_command = self.add_value_to_command_if_not_empty(set_command, "deployment.logindex", self._context.getParamOrEnv("logindex"))
+        set_command = self.add_value_to_command_if_not_empty(set_command, "deployment.logtopic", self._context.getParamOrEnv("logtopic"))
 
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
