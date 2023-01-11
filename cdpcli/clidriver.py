@@ -554,7 +554,7 @@ class CLIDriver(object):
                     self.__create_secret("file-secret", envVar, envValue, fileSecretEnvPattern)
 
         set_command = self.add_value_to_command_if_not_empty(set_command, "team", self._context.getParamOrEnv("team"))
-        set_command = self.add_value_to_command_if_not_empty(set_command, "team-domain", self._context.getParamOrEnv("team-domain"))
+        set_command = self.add_value_to_command_if_not_empty(set_command, "teamDomain", self._context.getParamOrEnv("team-domain"))
         set_command = self.add_value_to_command_if_not_empty(set_command, "logcollector.logindex", self._context.getParamOrEnv("logindex"))
         set_command = self.add_value_to_command_if_not_empty(set_command, "logcollector.logtopic", self._context.getParamOrEnv("logtopic"))
 
