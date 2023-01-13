@@ -34,8 +34,8 @@ Usage:
         [(--use-docker-compose)] 
         [--build-file=<buildFile>]
         [--values=<files>] [--custom-values=<values>]
-        [--team=<team>]
-        [--logindex=<logindex>]
+        [--team=<team>] [--team-domain=<team-domain>]
+        [--logindex=<logindex>] [--logtopic=<logtopic>]
         [--delete-labels=<minutes>|--release-ttl=<minutes>]
         [--namespace-project-name | --namespace-name=<namespace_name> ] [--namespace-project-branch-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
@@ -101,6 +101,7 @@ Options:
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --logindex=<logindex>                                      Name of the ES indice to store pod logs. $CDP_LOGINDEX is used if empty.
+    --logtopic=<logtopic>                                      Name of the Kafka topic to send pod logs. $CDP_LOGTOPIC is used if empty.
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
     --namespace-name=<namespace_name>                          Use namespace_name to create k8s namespace.
@@ -118,6 +119,7 @@ Options:
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --team=<team>                                              Name of the team. $CDP_TEAM is used if empty.
+    --team-domain=<team-domain>                                Name of the domain of the team. $CDP_TEAM_DOMAIN is used if empty.
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
     --use-docker                                               Use docker to build / push image [default].
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
@@ -552,7 +554,9 @@ class CLIDriver(object):
                     self.__create_secret("file-secret", envVar, envValue, fileSecretEnvPattern)
 
         set_command = self.add_value_to_command_if_not_empty(set_command, "team", self._context.getParamOrEnv("team"))
-        set_command = self.add_value_to_command_if_not_empty(set_command, "deployment.logindex", self._context.getParamOrEnv("logindex"))
+        set_command = self.add_value_to_command_if_not_empty(set_command, "teamDomain", self._context.getParamOrEnv("team-domain"))
+        set_command = self.add_value_to_command_if_not_empty(set_command, "logcollector.logindex", self._context.getParamOrEnv("logindex"))
+        set_command = self.add_value_to_command_if_not_empty(set_command, "logcollector.logtopic", self._context.getParamOrEnv("logtopic"))
 
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
@@ -617,6 +621,7 @@ class CLIDriver(object):
                        doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--release-ttl'] else "false"
 
                     final_docs.append(doc)
+                    CLIDriver.addGitlabLabels(doc)
                     #Manage Deployement and
                     if os.getenv('CDP_MONITORING')and os.getenv('CDP_MONITORING', 'TRUE').upper() != "FALSE":
                         if os.getenv('CDP_ALERTING', 'TRUE').upper()=="FALSE":
@@ -734,8 +739,10 @@ class CLIDriver(object):
            for index, value in enumerate(project.attributes['tag_list']):
                if "=" in value:
                   tag = value.split("=")
-                  doc['metadata']['labels'][tag[0]] = tag[1]
+                  if not tag[0] in doc['metadata']['labels']:
+                     doc['metadata']['labels'][tag[0]] = tag[1]
                   if 'template' in doc['spec'].keys():
+                     if not tag[0] in doc['spec']['template']['metadata']['labels']:
                       doc['spec']['template']['metadata']['labels'][tag[0]] = tag[1]
         return doc
 
