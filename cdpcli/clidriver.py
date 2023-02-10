@@ -773,6 +773,10 @@ class CLIDriver(object):
           for image_to_build in images_to_build:
             dockerfile = image_to_build["dockerfile"]
             context = image_to_build["context"]
+            target = image_to_build["target"]
+            if (target is None and self._context.opt['--docker-build-target']):
+                target = self._context.opt['--docker-build-target']
+
             full_dockerfile_path = context +'/' + dockerfile
             image_tag = image_to_build["image"]
             # Hadolint
@@ -780,8 +784,8 @@ class CLIDriver(object):
 
             # Tag docker image
             docker_build_command = 'build -t %s -f %s %s' % (image_tag, full_dockerfile_path, context)
-            if self._context.opt['--docker-build-target']:
-              docker_build_command = '%s --target %s' % (docker_build_command, self._context.opt['--docker-build-target'])
+            if target is not None:
+              docker_build_command = '%s --target %s' % (docker_build_command, target)
             if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and self._context.opt['--use-registry'] == 'artifactory':
               docker_build_command = '%s --label com.jfrog.artifactory.retention.maxCount="%s"' % (docker_build_command, os.environ['CDP_ARTIFACTORY_TAG_RETENTION'])
 
@@ -830,14 +834,24 @@ class CLIDriver(object):
         os.environ['CDP_IMAGE_PATH'] = image
 
         # Default image if no build file
-        images_to_build = [ {"composant": "image", "dockerfile" : "Dockerfile","context": self._context.opt['--build-context'],"image": self.__getImageTag(image, tag)}]
+        images_to_build = [ {"composant": "image", 
+                             "dockerfile" : "Dockerfile",
+                             "context": self._context.opt['--build-context'],
+                             "target": self._context.opt['--docker-build-target'],
+                             "image": self.__getImageTag(image, tag)}]
         if self._context.isMultiBuildContext():
            images_to_build = []
            with open(self._context.opt['--build-file']) as chartyml:
                  data = yaml.load(chartyml)
                  for service in data["services"]:
                      servicedef = data["services"][service]
-                     images_to_build.append({"composant": service, "dockerfile" : servicedef["build"]["dockerfile"],"context": servicedef["build"]["context"], "image": envsubst(servicedef["image"])})
+                     if ("target" not in servicedef["build"]):
+                        servicedef["build"]["target"] = None
+                     images_to_build.append({"composant": service, 
+                                             "dockerfile" : servicedef["build"]["dockerfile"],
+                                             "context": servicedef["build"]["context"],
+                                             "target": servicedef["build"]["target"], 
+                                             "image": envsubst(servicedef["image"])})
         return images_to_build
 
     def __getImageName(self):
