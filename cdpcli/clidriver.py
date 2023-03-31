@@ -334,6 +334,15 @@ class CLIDriver(object):
                 repos.append('%s/%s' % (self._context.repository, self._context.opt['--docker-build-target']))
             elif self._context.opt['--use-docker-compose']:
                  sys.exit("\x1b[31;1mERROR : docker-compose is deprecated.\x1b[0m")
+            if self._context.isMultiBuildContext():
+              # Get all repositories in multi-build-file
+              images_to_build = self.__getImagesToBuild(self.__getImageName(), "tag")
+              for image_to_build in images_to_build:
+                image = image_to_build["image"]
+                repo = image.partition("/")[-1]
+                repo = repo.rpartition(":")[0]
+                repos.append(repo)
+
             for repo in repos:
                 try:
                     aws_cmd.run('ecr list-images --repository-name %s --max-items 0' % repo)
@@ -847,6 +856,9 @@ class CLIDriver(object):
                      servicedef = data["services"][service]
                      if ("target" not in servicedef["build"]):
                         servicedef["build"]["target"] = None
+
+                     if ("CDP_REGISTRY" in servicedef["image"]):
+                          LOG.warning("\x1b[31;1mWARN : Variable CDP_REGISTRY in build-file is DEPRECATED and must be replaced by CDP_REGISTRY_PATH. See https://confluence.sipaof.fr/pages/viewpage.action?pageId=439846456\x1b[0m")
                      images_to_build.append({"composant": service, 
                                              "dockerfile" : servicedef["build"]["dockerfile"],
                                              "context": servicedef["build"]["context"],
