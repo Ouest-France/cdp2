@@ -539,7 +539,7 @@ class CLIDriver(object):
         if (alternateIngressClassName):
             set_command = '%s --set ingress.alternateIngressClassName=%s' % (set_command, alternateIngressClassName)
 
-        image_pull_secret_value = 'cdp2-%s-%s' % (self._context.registry, release)
+        image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
         image_pull_secret_value = image_pull_secret_value.replace(':', '-')
 
         # Need to add secret file for docker registry
