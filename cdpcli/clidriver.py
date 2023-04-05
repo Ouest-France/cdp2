@@ -562,11 +562,6 @@ class CLIDriver(object):
                 if envVar.startswith(fileSecretEnvPattern.upper(), 0):
                     self.__create_secret("file-secret", envVar, envValue, fileSecretEnvPattern)
 
-        set_command = self.add_value_to_command_if_not_empty(set_command, "team", self._context.getParamOrEnv("team"))
-        set_command = self.add_value_to_command_if_not_empty(set_command, "teamDomain", self._context.getParamOrEnv("team-domain"))
-        set_command = self.add_value_to_command_if_not_empty(set_command, "logcollector.logindex", self._context.getParamOrEnv("logindex"))
-        set_command = self.add_value_to_command_if_not_empty(set_command, "logcollector.logtopic", self._context.getParamOrEnv("logtopic"))
-
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
         
@@ -595,11 +590,26 @@ class CLIDriver(object):
             template_command = 'template %s' % (self._context.opt['--deploy-spec-dir'])
         
         template_command = '%s %s' % (template_command, set_command)
-        template_command = self.add_custom_values(template_command)
         if self._context.opt['--values']:
             valuesFiles = self._context.opt['--values'].strip().split(',')
             values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
             template_command = '%s %s' % (template_command, values)
+
+
+        # Custom values set to values-cdp.yml
+        values_cdp = {}
+        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "team", self._context.getParamOrEnv("team"))
+        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "teamDomain", self._context.getParamOrEnv("team-domain"))
+        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "logcollector.logindex", self._context.getParamOrEnv("logindex"))
+        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "logcollector.logtopic", self._context.getParamOrEnv("logtopic"))
+        values_cdp = self.add_custom_values(values_cdp)
+        values_cdp = self.add_env_vars(values_cdp)
+        if len(values_cdp) > 0:
+            values_cdp_file = '%s/values-cdp.yaml' % self._context.opt['--deploy-spec-dir']
+            with open(values_cdp_file, "w") as f:
+                yaml.dump(values_cdp, f)
+
+            template_command = '%s --values %s' % (template_command, values_cdp_file)   
 
         if self.isHelm2():
           template_command = '%s --name=%s' % (template_command, release)
@@ -1119,18 +1129,37 @@ class CLIDriver(object):
             if nbExclusiveOptions < minOccurrences:
                sys.exit("%s of %s is required (%s/%s)" % (minOccurrences, ",".join(options),minOccurrences,nbExclusiveOptions))
                sys.exit("\x1b[31;1mERROR : %s of %s is required (%s/%s)\x1b[0m"% (minOccurrences, ",".join(options),minOccurrences,nbExclusiveOptions))               
-    def add_value_to_command_if_not_empty(self, command, param, value):
-        if value is not None:
-           return '%s --set %s=%s' % (command, param, value)        
-        else:
-           return command
 
-    def add_custom_values(self, command):
+    def add_value_to_command_if_not_empty(self, values_cdp, param, value, parent = None):
+        if value is not None:
+           if parent is None: 
+             values_cdp[param] = value
+           else:
+               values_tmp = values_cdp
+               values = parent.split(".")
+               for v in  values:
+                 if not v in values_tmp:
+                   values_tmp[v] = {}
+                 values_tmp= values_tmp[v]
+               values_tmp[param] = value
+        return values_cdp
+
+    def add_custom_values(self, values_cdp):
        values = self._context.getParamOrEnv("custom-values")
        if values is not None:
           aValues = values.split(",")
           for value in aValues:
             if ("=" in value):
                aValue = value.split("=")
-               command = '%s --set %s=%s' % (command, aValue[0], aValue[1])        
-       return command
+               self.add_value_to_command_if_not_empty(values_cdp, aValue[0], aValue[1])
+       return values_cdp
+
+    def add_env_vars(self, values_cdp):
+       values = self._context.getParamOrEnv("ENV_VARS")
+       if values is not None:
+          aValues = values.split(",")
+          for envvar in aValues:
+              if (len(os.getenv(envvar, '')) > 0 ):
+                 value = os.getenv(envvar) 
+                 self.add_value_to_command_if_not_empty(values_cdp, envvar, value,"deployment.secrets")
+       return values_cdp
