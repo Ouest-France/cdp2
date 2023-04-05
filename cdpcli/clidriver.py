@@ -607,6 +607,7 @@ class CLIDriver(object):
         if len(values_cdp) > 0:
             values_cdp_file = '%s/values-cdp.yaml' % self._context.opt['--deploy-spec-dir']
             with open(values_cdp_file, "w") as f:
+                LOG.verbose(yaml.dump_all(values_cdp))
                 yaml.dump(values_cdp, f)
 
             template_command = '%s --values %s' % (template_command, values_cdp_file)   
