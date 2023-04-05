@@ -1130,18 +1130,15 @@ class CLIDriver(object):
                sys.exit("%s of %s is required (%s/%s)" % (minOccurrences, ",".join(options),minOccurrences,nbExclusiveOptions))
                sys.exit("\x1b[31;1mERROR : %s of %s is required (%s/%s)\x1b[0m"% (minOccurrences, ",".join(options),minOccurrences,nbExclusiveOptions))               
 
-    def add_value_to_command_if_not_empty(self, values_cdp, param, value, parent = None):
+    def add_value_to_command_if_not_empty(self, values_cdp, param, value):
         if value is not None:
-           if parent is None: 
-             values_cdp[param] = value
-           else:
-               values_tmp = values_cdp
-               values = parent.split(".")
-               for v in  values:
-                 if not v in values_tmp:
+            values_tmp = values_cdp
+            values = param.split(".")
+            for v in  values:
+                if not v in values_tmp:
                    values_tmp[v] = {}
-                 values_tmp= values_tmp[v]
-               values_tmp[param] = value
+                values_tmp= values_tmp[v]
+            values_tmp[param] = value
         return values_cdp
 
     def add_custom_values(self, values_cdp):
@@ -1161,5 +1158,5 @@ class CLIDriver(object):
           for envvar in aValues:
               if (len(os.getenv(envvar, '')) > 0 ):
                  value = os.getenv(envvar) 
-                 self.add_value_to_command_if_not_empty(values_cdp, envvar, value,"deployment.secrets")
+                 self.add_value_to_command_if_not_empty(values_cdp, "deployment.secrets." + envvar, value,)
        return values_cdp
