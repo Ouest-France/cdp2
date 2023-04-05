@@ -26,18 +26,19 @@ class FakeCommand(object):
         self._index = 0
         self._tc = unittest.TestCase('__init__')
 
-    def run_command(self, cmd, dry_run = None, timeout = None, raise_error = True):
-        return self.run(cmd, dry_run, timeout, raise_error)
+    def run_command(self, cmd, dry_run = None, timeout = None, raise_error = True , no_test = False):
+        return self.run(cmd, dry_run, timeout, raise_error, no_test)
 
     def run_secret_command(self, cmd, dry_run = None, timeout = None, raise_error = True):
         return self.run(cmd, dry_run, timeout, raise_error)
 
-    def run(self, cmd, dry_run = None, timeout = None, raise_error = True):
+    def run(self, cmd, dry_run = None, timeout = None, raise_error = True, no_test = False):
         try:
             image = self._verif_cmd[self._index]['docker_image']
         except KeyError:
             image = "unecessary"
-
+        if no_test:
+            return ""
         try:
             try:
                 self._tc.assertEqual(raise_error, self._verif_cmd[self._index]['verif_raise_error'])

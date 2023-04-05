@@ -14,11 +14,11 @@ class CLICommand(object):
         LOG.setLevel(log_level)
         LOG.verbose('Dry-run init %s' % self._dry_run)
 
-    def run_command(self, command, dry_run = None, timeout = None, raise_error = True):
+    def run_command(self, command, dry_run = None, timeout = None, raise_error = True, no_test = False):
         LOG.info('')
         LOG.info('******************** Run command ********************')
         LOG.info(command)
-        return self.run(command, dry_run, timeout, raise_error)
+        return self.run(command, dry_run, timeout, raise_error, no_test)
 
     def run_secret_command(self, command, dry_run = None, timeout = None, raise_error = True):
         if "CDP_DEBUG" in os.environ:
@@ -27,7 +27,7 @@ class CLICommand(object):
             LOG.info(command)
         return self.run(command, dry_run, timeout, raise_error)
         
-    def run(self, command, dry_run = None, timeout = None, raise_error = True):
+    def run(self, command, dry_run = None, timeout = None, raise_error = True, no_test = False):
         start = timeit.default_timer()
         self._process = None
         self._output = []

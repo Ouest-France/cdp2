@@ -594,6 +594,9 @@ class CLIDriver(object):
         template_command = '%s %s' % (template_command, set_command)
         if self._context.opt['--values']:
             valuesFiles = self._context.opt['--values'].strip().split(',')
+            for valuesFile in valuesFiles:
+                self._cmd.run('envsubst < %s/%s > %s/%s.new && mv %s/%s.new %s/%s' % (self._context.opt['--deploy-spec-dir'], valuesFile, tmp_chart_dir, valuesFile, 
+                                                                                      tmp_chart_dir, valuesFile, self._context.opt['--deploy-spec-dir'], valuesFile),no_test = True)
             values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
             template_command = '%s %s' % (template_command, values)
 
@@ -650,7 +653,7 @@ class CLIDriver(object):
                             doc = CLIDriver.addMonitoringLabel(doc, False)
                         else:
                             doc = CLIDriver.addMonitoringLabel(doc, True)
-                    # Ajout du champ imagePulLSecrets seulement si par les charts par défaut car déjà prévu. Retro-compatiibilité
+                    # Ajout du champ imagePulLSecrets seulement si pas par les charts par défaut car déjà prévu. Retro-compatiibilité
                     if not self._context.opt['--use-chart']:
                         if not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
                            doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
