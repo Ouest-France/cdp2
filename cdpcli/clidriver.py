@@ -1132,15 +1132,18 @@ class CLIDriver(object):
 
     def add_value_to_command_if_not_empty(self, values_cdp, param, value):
         if value is not None:
-            values_tmp = values_cdp
-            values = param.split(".")
-            for v in  values:
-                if not v in values_tmp:
-                   values_tmp[v] = {}
-                values_tmp= values_tmp[v]
-            values_tmp[param] = value
+             values_tmp = values_cdp
+             params = param.split(".")
+             key = params[-1]
+             keys = params[:-1]
+             if len(keys) > 0:
+               for k in  keys:
+                 if not k in values_tmp:
+                    values_tmp[k] = {}
+                 values_tmp= values_tmp[k]
+             values_tmp[key] = value
         return values_cdp
-
+    
     def add_custom_values(self, values_cdp):
        values = self._context.getParamOrEnv("custom-values")
        if values is not None:
