@@ -50,7 +50,6 @@ Usage:
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
         [--volume-from=<host_type>]
-        [--env-vars=<env_vars>]
     cdp conftest [(-v | --verbose | -q | --quiet)] (--deploy-spec-dir=<dir>) 
         [--conftest-repo=<gitlab repo>] [--no-conftest] [--volume-from=<host_type>] [--conftest-namespaces=<namespaces>] [--docker-image-conftest=<image_name_conftest>] 
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
@@ -84,7 +83,6 @@ Options:
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
     --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
     --docker-build-target=<target_name>                        Specify target in multi stage build
-    --env-vars=<env vars>                                      List of environments variables (separated by comma) to export as secrets.
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --helm-version=<version>                                   Major version of Helm. [default: 3]
     --helm-migration=<true|false>                              Do helm 2 to Helm 3 migration
@@ -608,7 +606,7 @@ class CLIDriver(object):
         values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "logcollector.logindex", self._context.getParamOrEnv("logindex"))
         values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "logcollector.logtopic", self._context.getParamOrEnv("logtopic"))
         values_cdp = self.add_custom_values(values_cdp)
-        values_cdp = self.add_env_vars(values_cdp)
+        #values_cdp = self.add_env_vars(values_cdp)
         if len(values_cdp) > 0:
             values_cdp_file = '%s/values-cdp.yaml' % self._context.opt['--deploy-spec-dir']
             with open(values_cdp_file, "w") as f:
