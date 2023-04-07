@@ -144,15 +144,13 @@ Deprecated options:
     --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup. use release-ttl instead [DEPRECATED] 
 """
 import base64
-import configparser
 import sys, os, re
 import logging, verboselogs
-import time, datetime
+import datetime
 import json
 import gitlab
 import pyjq
 import shutil
-import glob
 
 
 from .Context import Context
@@ -168,6 +166,7 @@ from .conftestcommand import ConftestCommand
 from docopt import docopt, DocoptExit
 from .PropertiesParser import PropertiesParser
 from .Yaml import Yaml
+from os import system
 from envsubst import envsubst
 
 LOG = verboselogs.VerboseLogger('clidriver')
@@ -592,9 +591,6 @@ class CLIDriver(object):
         template_command = '%s %s' % (template_command, set_command)
         if self._context.opt['--values']:
             valuesFiles = self._context.opt['--values'].strip().split(',')
-            for valuesFile in valuesFiles:
-                self._cmd.run('envsubst < %s/%s > %s/%s.new && mv %s/%s.new %s/%s' % (self._context.opt['--deploy-spec-dir'], valuesFile, tmp_chart_dir, valuesFile, 
-                                                                                      tmp_chart_dir, valuesFile, self._context.opt['--deploy-spec-dir'], valuesFile),no_test = True)
             values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
             template_command = '%s %s' % (template_command, values)
 
@@ -636,30 +632,33 @@ class CLIDriver(object):
 
         with open(tmp_templating_file, 'r') as stream:
             docs = list(yaml.load_all(stream))
-            final_docs = []
-            for doc in docs:
-                if doc is not None:
-                    # Ajout du label deletable sur tous les objets si la release est temporaire
-                    if "metadata" in doc and "labels" in doc['metadata']:
-                       doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--release-ttl'] else "false"
 
-                    final_docs.append(doc)
-                    CLIDriver.addGitlabLabels(doc)
-                    #Manage Deployement and
-                    if os.getenv('CDP_MONITORING')and os.getenv('CDP_MONITORING', 'TRUE').upper() != "FALSE":
-                        if os.getenv('CDP_ALERTING', 'TRUE').upper()=="FALSE":
-                            doc = CLIDriver.addMonitoringLabel(doc, False)
-                        else:
-                            doc = CLIDriver.addMonitoringLabel(doc, True)
-                    # Ajout du champ imagePulLSecrets seulement si pas par les charts par défaut car déjà prévu. Retro-compatiibilité
-                    if not self._context.opt['--use-chart']:
-                        if not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
-                           doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
-                    
-                    LOG.verbose(doc)
+        final_docs = []
+        for doc in docs:
+            if doc is not None:
+                # Ajout du label deletable sur tous les objets si la release est temporaire
+                if "metadata" in doc and "labels" in doc['metadata']:
+                   doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--release-ttl'] else "false"
+                final_docs.append(doc)
+                CLIDriver.addGitlabLabels(doc)
+                #Manage Deployement and
+                if os.getenv('CDP_MONITORING')and os.getenv('CDP_MONITORING', 'TRUE').upper() != "FALSE":
+                    if os.getenv('CDP_ALERTING', 'TRUE').upper()=="FALSE":
+                        doc = CLIDriver.addMonitoringLabel(doc, False)
+                    else:
+                        doc = CLIDriver.addMonitoringLabel(doc, True)
+                # Ajout du champ imagePulLSecrets seulement si pas par les charts par défaut car déjà prévu. Retro-compatiibilité
+                if not self._context.opt['--use-chart']:
+                    if not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
+                       doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
+                
+                LOG.verbose(doc)
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
-            LOG.info(yaml.dump_all(final_docs))
             yaml.dump_all(final_docs, outfile)
+
+        # Replace environnement variables
+        self.envsubst_values(final_template_deploy_spec_dir)
+        system('cat %s/all_resources.yaml' % (final_template_deploy_spec_dir))
 
         #Run conftest
         conftest_temp_dir = '%s_conftest' % self._context.opt['--deploy-spec-dir']
@@ -1169,3 +1168,9 @@ class CLIDriver(object):
                  LOG.info("Setting %s = %s as secrets" % (envvar, value))
                  self.add_value_to_command_if_not_empty(values_cdp, "deployment.secrets." + envvar, value,)
        return values_cdp
+
+    def envsubst_values(self, dir):
+        tmp_chart_dir = "/tmp"
+        valuesFile = "all_resources.yaml"
+        self._cmd.run('/usr/bin/envsubst "$(printf \'${%%s} \' $(env | cut -d\'=\' -f1))" < %s/%s > %s/%s.new && mv %s/%s.new %s/%s' % 
+                      (dir, valuesFile, tmp_chart_dir, valuesFile,tmp_chart_dir, valuesFile, dir, valuesFile), no_test = True)

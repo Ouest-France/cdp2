@@ -33,12 +33,14 @@ class FakeCommand(object):
         return self.run(cmd, dry_run, timeout, raise_error)
 
     def run(self, cmd, dry_run = None, timeout = None, raise_error = True, no_test = False):
+        if no_test:
+            return ""
         try:
+            print(self._index)
+            print(self._verif_cmd)
             image = self._verif_cmd[self._index]['docker_image']
         except KeyError:
             image = "unecessary"
-        if no_test:
-            return ""
         try:
             try:
                 self._tc.assertEqual(raise_error, self._verif_cmd[self._index]['verif_raise_error'])
