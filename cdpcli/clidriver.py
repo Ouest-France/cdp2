@@ -145,9 +145,13 @@ Deprecated options:
 """
 import base64
 import configparser
-import sys, os, re
-import logging, verboselogs
-import time, datetime
+import sys
+import os
+import re
+import logging
+import verboselogs
+import time
+import datetime
 import json
 import gitlab
 import pyjq
@@ -178,6 +182,7 @@ yaml = Yaml()
 yaml.preserve_quotes = True
 yaml.explicit_start = True
 
+
 def main():
     if len(sys.argv) > 1 and sys.argv[1] == "build":
         sys.exit("\x1b[31;1mERROR : build command is deprecated\x1b[0m")
@@ -192,8 +197,10 @@ def main():
         log_level = logging.WARNING
     LOG.setLevel(log_level)
 
-    driver = CLIDriver(cmd = CLICommand(opt['--dry-run'], log_level = log_level), opt = opt)
+    driver = CLIDriver(cmd=CLICommand(
+        opt['--dry-run'], log_level=log_level), opt=opt)
     return driver.main()
+
 
 class CLIDriver(object):
     def __init__(self, cmd=None, opt=None):
@@ -211,39 +218,48 @@ class CLIDriver(object):
             self._context = Context(opt, cmd, LOG)
             LOG.verbose('Context : %s', self._context.__dict__)
 
-            deprecated = {'docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-conftest','docker-image','use-docker-compose','namespace-project-branch-name',"volume-from"}
+            deprecated = {'docker-image-aws', 'docker-image-git', 'docker-image-kubectl', 'docker-image-conftest',
+                          'docker-image', 'use-docker-compose', 'namespace-project-branch-name', "volume-from"}
             for option in deprecated:
-               if (self._context.getParamOrEnv(option)):
-                 LOG.warning("\x1b[31;1mWARN : Option %s is DEPRECATED and will not be used\x1b[0m",option)
+                if (self._context.getParamOrEnv(option)):
+                    LOG.warning(
+                        "\x1b[31;1mWARN : Option %s is DEPRECATED and will not be used\x1b[0m", option)
 
-            if self._context.getParamOrEnv("docker-image-helm") :
-                 image_helm_version = self._context.getParamOrEnv("docker-image-helm")
-                 helm_version = image_helm_version[21]
-                 LOG.warning("\x1b[31;1mWARN : Option docker-image-helm is DEPRECATED. Use --helm-version instead. Set to %s\x1b[0m")
-                 opt["--helm-version"] = helm_version
+            if self._context.getParamOrEnv("docker-image-helm"):
+                image_helm_version = self._context.getParamOrEnv(
+                    "docker-image-helm")
+                helm_version = image_helm_version[21]
+                LOG.warning(
+                    "\x1b[31;1mWARN : Option docker-image-helm is DEPRECATED. Use --helm-version instead. Set to %s\x1b[0m")
+                opt["--helm-version"] = helm_version
 
             if opt['--create-default-helm']:
-                 LOG.warning("\x1b[31;1mWARN : Option --create-default-helm is DEPRECATED and is replaced by --use-chart=legacy\x1b[0m")
-                 opt["--use-chart"] = "legacy"
+                LOG.warning(
+                    "\x1b[31;1mWARN : Option --create-default-helm is DEPRECATED and is replaced by --use-chart=legacy\x1b[0m")
+                opt["--use-chart"] = "legacy"
 
             if opt['--docker-version']:
-                 LOG.warning("\x1b[31;1mWARN : Option --docker-version is DEPRECATED and is replaced by --docker-image-maven=maven:%s\x1b[0m" % opt['--docker-version'])
-                 opt["--docker-image-maven"] = "maven:%s" % opt['--docker-version']
+                LOG.warning(
+                    "\x1b[31;1mWARN : Option --docker-version is DEPRECATED and is replaced by --docker-image-maven=maven:%s\x1b[0m" % opt['--docker-version'])
+                opt["--docker-image-maven"] = "maven:%s" % opt['--docker-version']
 
             if (not opt['--namespace-project-name'] and opt['--namespace-name']):
-                opt["--namespace-project-name"] = True                      
+                opt["--namespace-project-name"] = True
 
             if opt['--delete-labels']:
-                 LOG.warning("\x1b[31;1mWARN : Option --delete-labels is DEPRECATED and is replaced by --release-ttl\x1b[0m")
-                 opt["--release-ttl"] = opt['--delete-labels']
-
+                LOG.warning(
+                    "\x1b[31;1mWARN : Option --delete-labels is DEPRECATED and is replaced by --release-ttl\x1b[0m")
+                opt["--release-ttl"] = opt['--delete-labels']
 
     def main(self, args=None):
-        exclusiveReleaseOptions = ["--release-project-branch-name","--release-project-env-name","--release-project-name","--release-shortproject-name","--release-namespace-name","--release-custom-name","--release-name"]            
-        exclusiveRegistryOptions = ["--use-gitlab-registry","--use-aws-ecr","--use-custom-registry","--use-registry"]
-        exclusiveTagsOptions = ["--image-tag-branch-name","--image-tag-latest","--image-tag-sha1","--image-tag","--image-fullname"]
+        exclusiveReleaseOptions = ["--release-project-branch-name", "--release-project-env-name", "--release-project-name",
+                                   "--release-shortproject-name", "--release-namespace-name", "--release-custom-name", "--release-name"]
+        exclusiveRegistryOptions = [
+            "--use-gitlab-registry", "--use-aws-ecr", "--use-custom-registry", "--use-registry"]
+        exclusiveTagsOptions = ["--image-tag-branch-name", "--image-tag-latest",
+                                "--image-tag-sha1", "--image-tag", "--image-fullname"]
         try:
-            #if self._context.opt['login']:
+            # if self._context.opt['login']:
             #    print ("Login to %s registry done" % self._context.opt['--use-registry'])
 
             if self._context.opt['maven']:
@@ -260,10 +276,13 @@ class CLIDriver(object):
 
             if self._context.opt['k8s']:
                 self.check_runner_permissions("k8s")
-                self.check_mutually_exclusives_options(self._context.opt, exclusiveReleaseOptions, 0)
-                self.check_mutually_exclusives_options(self._context.opt, exclusiveTagsOptions, 0)
+                self.check_mutually_exclusives_options(
+                    self._context.opt, exclusiveReleaseOptions, 0)
+                self.check_mutually_exclusives_options(
+                    self._context.opt, exclusiveTagsOptions, 0)
                 if (self._context.opt['--release-ttl'] and self._context.opt['--use-registry'] != 'gitlab' and self._context.opt['--use-registry'] != 'aws-ecr'):
-                    sys.exit("\x1b[31;1mERROR : k8s command with --release-ttl (or --delete-labels) flag can only be used vith gitlab or aws ecr registry\x1b[0m")
+                    sys.exit(
+                        "\x1b[31;1mERROR : k8s command with --release-ttl (or --delete-labels) flag can only be used vith gitlab or aws ecr registry\x1b[0m")
                 self.__k8s()
 
             if self._context.opt['conftest']:
@@ -274,10 +293,9 @@ class CLIDriver(object):
                 self.__validator()
 
         finally:
-            sleep =  os.getenv('CDP_SLEEP', self._context.opt['--sleep'])
+            sleep = os.getenv('CDP_SLEEP', self._context.opt['--sleep'])
             if sleep is not None and sleep != "0":
                 self._cmd.run_command('sleep %s' % sleep)
-
 
     def __maven(self):
         force_git_config = False
@@ -289,38 +307,46 @@ class CLIDriver(object):
         if self._context.opt['--deploy']:
             if self._context.opt['--deploy'] == 'release':
                 force_git_config = True
-                command = '--batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git' % (self._context.opt['--maven-release-plugin'], self._context.opt['--maven-release-plugin'])
+                command = '--batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git' % (
+                    self._context.opt['--maven-release-plugin'], self._context.opt['--maven-release-plugin'])
                 if self._context.opt['--altDeploymentRepository']:
-                    arguments = '-DskipTests -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::%s/%s' % (os.environ['CDP_REPOSITORY_URL'],self._context.opt['--altDeploymentRepository'])
+                    arguments = '-DskipTests -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::%s/%s' % (
+                        os.environ['CDP_REPOSITORY_URL'], self._context.opt['--altDeploymentRepository'])
                 else:
-                    arguments = '-DskipTests -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::%s/%s' % (os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_RELEASE'])
+                    arguments = '-DskipTests -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::%s/%s' % (
+                        os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_RELEASE'])
 
                 if os.getenv('MAVEN_OPTS', None) is not None:
                     arguments = '%s %s' % (arguments, os.environ['MAVEN_OPTS'])
 
-                command = '%s -DreleaseProfiles=release -Darguments="%s"' % (command, arguments)
+                command = '%s -DreleaseProfiles=release -Darguments="%s"' % (
+                    command, arguments)
             else:
-                command = 'deploy -DskipTests -DskipITs -DaltDeploymentRepository=snapshot::default::%s/%s' % (os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_SNAPSHOT'])
-
+                command = 'deploy -DskipTests -DskipITs -DaltDeploymentRepository=snapshot::default::%s/%s' % (
+                    os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_SNAPSHOT'])
 
         if os.getenv('MAVEN_OPTS', None) is not None:
             command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
 
-        #command = 'mvn %s %s' % (command, '-s %s' % settings)
+        # command = 'mvn %s %s' % (command, '-s %s' % settings)
         command = 'mvn %s' % (command)
 
-        LOG.warning("\x1b[31;1mWARN : The maven command is obsolete. Run theses commands instead \x1b[0m")       
+        LOG.warning(
+            "\x1b[31;1mWARN : The maven command is obsolete. Run theses commands instead \x1b[0m")
         if self._context.opt['--simulate-merge-on']:
-            LOG.warning("\x1b[31;1m           - %s \x1b[0m",'git checkout %s' % self._context.opt['--simulate-merge-on'])
-            LOG.warning("\x1b[31;1m           - %s \x1b[0m",'git reset --hard origin/%s' % self._context.opt['--simulate-merge-on'])
-            LOG.warning("\x1b[31;1m           - %s \x1b[0m",'git merge $CI_COMMIT_SHA --no-commit --no-ff')
-        LOG.warning("\x1b[31;1m           - %s \x1b[0m",command)
-        #self.__simulate_merge_on(force_git_config)
+            LOG.warning("\x1b[31;1m           - %s \x1b[0m", 'git checkout %s' %
+                        self._context.opt['--simulate-merge-on'])
+            LOG.warning("\x1b[31;1m           - %s \x1b[0m", 'git reset --hard origin/%s' %
+                        self._context.opt['--simulate-merge-on'])
+            LOG.warning("\x1b[31;1m           - %s \x1b[0m",
+                        'git merge $CI_COMMIT_SHA --no-commit --no-ff')
+        LOG.warning("\x1b[31;1m           - %s \x1b[0m", command)
+        # self.__simulate_merge_on(force_git_config)
 
-        #self._cmd.run_command('cp /cdp/maven/settings.xml %s' % settings)
+        # self._cmd.run_command('cp /cdp/maven/settings.xml %s' % settings)
 
-        #maven_cmd = MavenCommand(self._cmd, self._context.opt['--docker-image-maven'])
-        #maven_cmd.run(command)
+        # maven_cmd = MavenCommand(self._cmd, self._context.opt['--docker-image-maven'])
+        # maven_cmd.run(command)
 
     def __docker(self):
         if self._context.opt['--use-registry'] == 'aws-ecr':
@@ -329,26 +355,32 @@ class CLIDriver(object):
             repos = []
 
             if self._context.opt['--use-docker'] or not (self._context.opt['--use-docker-compose']) and not (self._context.opt['--docker-build-target']):
-                repos.append(self._context.repository )
+                repos.append(self._context.repository)
             elif (self._context.opt['--docker-build-target']):
-                repos.append('%s/%s' % (self._context.repository, self._context.opt['--docker-build-target']))
+                repos.append('%s/%s' % (self._context.repository,
+                             self._context.opt['--docker-build-target']))
             elif self._context.opt['--use-docker-compose']:
-                 sys.exit("\x1b[31;1mERROR : docker-compose is deprecated.\x1b[0m")
+                sys.exit(
+                    "\x1b[31;1mERROR : docker-compose is deprecated.\x1b[0m")
             if self._context.isMultiBuildContext():
-              # Get all repositories in multi-build-file
-              images_to_build = self.__getImagesToBuild(self.__getImageName(), "tag")
-              for image_to_build in images_to_build:
-                image = image_to_build["image"]
-                repo = image.partition("/")[-1]
-                repo = repo.rpartition(":")[0]
-                repos.append(repo)
+                # Get all repositories in multi-build-file
+                images_to_build = self.__getImagesToBuild(
+                    self.__getImageName(), "tag")
+                for image_to_build in images_to_build:
+                    image = image_to_build["image"]
+                    repo = image.partition("/")[-1]
+                    repo = repo.rpartition(":")[0]
+                    repos.append(repo)
 
             for repo in repos:
                 try:
-                    aws_cmd.run('ecr list-images --repository-name %s --max-items 0' % repo)
+                    aws_cmd.run(
+                        'ecr list-images --repository-name %s --max-items 0' % repo)
                 except Exception:
-                    LOG.warning('AWS ECR repository doesn\'t  exist. Creating this one.')
-                    aws_cmd.run('ecr create-repository --repository-name %s' % repo)
+                    LOG.warning(
+                        'AWS ECR repository doesn\'t  exist. Creating this one.')
+                    aws_cmd.run(
+                        'ecr create-repository --repository-name %s' % repo)
 
         # Tag and push docker image
         if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1'] or self._context.opt['--image-tag']) or self._context.opt['--image-tag-branch-name']:
@@ -359,8 +391,8 @@ class CLIDriver(object):
         if self._context.opt['--image-tag-sha1']:
             self.__buildTagAndPushOnDockerRegistry(self.__getTagSha1())
         if self._context.opt['--image-tag']:
-            self.__buildTagAndPushOnDockerRegistry(self._context.opt['--image-tag'])
-
+            self.__buildTagAndPushOnDockerRegistry(
+                self._context.opt['--image-tag'])
 
     def __artifactory(self):
         if self._context.opt['--put']:
@@ -370,42 +402,49 @@ class CLIDriver(object):
             upload_file = self._context.opt['--delete']
             http_verb = 'DELETE'
         else:
-            sys.exit("\x1b[31;1mERROR : Incorrect option with artifactory command.\x1b[0m")
+            sys.exit(
+                "\x1b[31;1mERROR : Incorrect option with artifactory command.\x1b[0m")
 
         # Tag and push docker image
         if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1'] or self._context.opt['--image-tag']) or self._context.opt['--image-tag-branch-name']:
             # Default if none option selected
-            self.__callArtifactoryFile(self.__getTagBranchName(), upload_file, http_verb)
+            self.__callArtifactoryFile(
+                self.__getTagBranchName(), upload_file, http_verb)
         if self._context.opt['--image-tag-latest']:
-            self.__callArtifactoryFile(self.__getTagLatest(), upload_file, http_verb)
+            self.__callArtifactoryFile(
+                self.__getTagLatest(), upload_file, http_verb)
         if self._context.opt['--image-tag-sha1']:
-            self.__callArtifactoryFile(self.__getTagSha1(), upload_file, http_verb)
+            self.__callArtifactoryFile(
+                self.__getTagSha1(), upload_file, http_verb)
         if self._context.opt['--image-tag']:
-            self.__callArtifactoryFile(self._context.opt['--image-tag'], upload_file, http_verb)
+            self.__callArtifactoryFile(
+                self._context.opt['--image-tag'], upload_file, http_verb)
 
     def __k8s(self):
 
         if self._context.opt['--check-only']:
-           print("/!\\ ============ Check only mode - Release will not be deployed ===========" )
+            print(
+                "/!\\ ============ Check only mode - Release will not be deployed ===========")
 
         kubectl_cmd = KubectlCommand(self._cmd, '', True)
-        helm_migration = True if self._context.getParamOrEnv("helm-migration") == "true" else False
-        
+        helm_migration = True if self._context.getParamOrEnv(
+            "helm-migration") == "true" else False
+
         if self._context.opt['--image-tag-latest']:
-            tag =  self.__getTagLatest()
+            tag = self.__getTagLatest()
             pullPolicy = 'Always'
         else:
             if self._context.opt['--image-tag-sha1']:
-               tag = self.__getTagSha1()
-               pullPolicy = 'IfNotPresent'
+                tag = self.__getTagSha1()
+                pullPolicy = 'IfNotPresent'
             elif self._context.opt['--image-tag']:
-               tag = self._context.opt['--image-tag']
-               pullPolicy = 'IfNotPresent'
+                tag = self._context.opt['--image-tag']
+                pullPolicy = 'IfNotPresent'
             else:
-               tag = self.__getTagBranchName()
-               pullPolicy = 'Always'
+                tag = self.__getTagBranchName()
+                pullPolicy = 'Always'
 
-        # Gestion des prefix des tags pour la retention auto de Harbor            
+        # Gestion des prefix des tags pour la retention auto de Harbor
         prefix = self._context.getParamOrEnv("image-prefix-tag")
         if prefix and self._context._registry != None:
             # Apply prefix to all built images
@@ -413,8 +452,8 @@ class CLIDriver(object):
             for image in images:
                 imagePath = image["image"].rsplit(':', 1)[0]
                 self.__addPrefixToTag(imagePath, tag, prefix)
-            tag = "%s-%s" % (prefix,tag)
-            
+            tag = "%s-%s" % (prefix, tag)
+
         # Use release name instead of the namespace name for release
         release = self.__getRelease().replace('/', '-')
         namespace = self.__getNamespace()
@@ -427,83 +466,100 @@ class CLIDriver(object):
 
         # Helm2to3 migration
         if helm_migration and not self._context.opt['--check-only']:
-           try:
-              migr_cmd = '/cdp/scripts/migrate_helm.sh -n %s -r %s' % (namespace, release)
-              if self._context.opt['--tiller-namespace']:
-                 migr_cmd = '%s -t %s' % (migr_cmd, namespace)
-              output = self._cmd.run_command(migr_cmd)            
-           except OSError as e:            
-              if e.errno > 1:
-                  sys.exit("\x1b[31;1mERROR : Migration to helm 3 of release %s has failed : %s\x1b[0m" % (release, str(e)))
-              if e.errno == 1:
-                 cleanupHelm2 = True
+            try:
+                migr_cmd = '/cdp/scripts/migrate_helm.sh -n %s -r %s' % (
+                    namespace, release)
+                if self._context.opt['--tiller-namespace']:
+                    migr_cmd = '%s -t %s' % (migr_cmd, namespace)
+                output = self._cmd.run_command(migr_cmd)
+            except OSError as e:
+                if e.errno > 1:
+                    sys.exit("\x1b[31;1mERROR : Migration to helm 3 of release %s has failed : %s\x1b[0m" % (
+                        release, str(e)))
+                if e.errno == 1:
+                    cleanupHelm2 = True
 
-           # migration effectuee ou non nécessaire, on force la version de Helm à 3 
-           self._context.opt["--helm-version"] = '3' 
+            #  migration effectuee ou non nécessaire, on force la version de Helm à 3
+            self._context.opt["--helm-version"] = '3'
 
-        helm_cmd = HelmCommand(self._cmd, self._context.getParamOrEnv("helm-version"), True)
-        chart_placeholders = ['<project.name>','<helm.version>']
-        chart_replacement = [os.environ['CI_PROJECT_NAME'], "v1" if self.isHelm2() else "v2"]
+        helm_cmd = HelmCommand(
+            self._cmd, self._context.getParamOrEnv("helm-version"), True)
+        chart_placeholders = ['<project.name>', '<helm.version>']
+        chart_replacement = [os.environ['CI_PROJECT_NAME'],
+                             "v1" if self.isHelm2() else "v2"]
 
         os.makedirs(final_template_deploy_spec_dir)
         # Need to create default helm charts
         if self._context.opt['--use-chart']:
-            os.makedirs('%s/templates' % self._context.opt['--deploy-spec-dir'],0o777, True)
+            os.makedirs('%s/templates' %
+                        self._context.opt['--deploy-spec-dir'], 0o777, True)
             # Check that the chart dir no exists
             if os.path.isfile('%s/values.yaml' % self._context.opt['--deploy-spec-dir']):
-               sys.exit("\x1b[31;1mERROR : Filename values.yaml must not be used when --use-chart is set. Please rename to another name (Ex : values-common.yml)\x1b[0m")
+                sys.exit(
+                    "\x1b[31;1mERROR : Filename values.yaml must not be used when --use-chart is set. Please rename to another name (Ex : values-common.yml)\x1b[0m")
             else:
                 chartIsPresent = False
-                #Download predefined chart in a temporary directory
-                self.downloadChart(tmp_chart_dir,self._context.getParamOrEnv('chart-repo',""), self._context.getParamOrEnv('use-chart',""))
+                # Download predefined chart in a temporary directory
+                self.downloadChart(tmp_chart_dir, self._context.getParamOrEnv(
+                    'chart-repo', ""), self._context.getParamOrEnv('use-chart', ""))
                 if os.path.isfile('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir']):
-                   chartIsPresent = True
-                   # We delete default Chart.yaml cause it exists in working directory
-                   os.remove(tmp_chart_dir + "/Chart.yaml")
+                    chartIsPresent = True
+                    # We delete default Chart.yaml cause it exists in working directory
+                    os.remove(tmp_chart_dir + "/Chart.yaml")
                 else:
-                   # replace placeholders
-                   with open('%s/Chart.yaml' % tmp_chart_dir, 'r+') as f:
-                       text = f.read()
-                       for i in range(0,len(chart_placeholders)):
-                           text = text.replace(chart_placeholders[i], chart_replacement[i])
-                       f.seek(0)
-                       f.write(text)
-                       f.truncate()
+                    # replace placeholders
+                    with open('%s/Chart.yaml' % tmp_chart_dir, 'r+') as f:
+                        text = f.read()
+                        for i in range(0, len(chart_placeholders)):
+                            text = text.replace(
+                                chart_placeholders[i], chart_replacement[i])
+                        f.seek(0)
+                        f.write(text)
+                        f.truncate()
                 # Download additional chart if set
                 if self._context.opt['--use-additional-chart']:
-                   self.downloadChart(tmp_chart_dir,self._context.getParamOrEnv('additional-chart-repo',""), self._context.getParamOrEnv('use-additional-chart',""))
+                    self.downloadChart(tmp_chart_dir, self._context.getParamOrEnv(
+                        'additional-chart-repo', ""), self._context.getParamOrEnv('use-additional-chart', ""))
 
-            self._cmd.run_command('cp -R %s/* %s/' % (tmp_chart_dir, self._context.opt['--deploy-spec-dir']))
-            #shutil.copytree('%s' % tmp_chart_dir, '%s' % self._context.opt['--deploy-spec-dir'])
+            self._cmd.run_command(
+                'cp -R %s/* %s/' % (tmp_chart_dir, self._context.opt['--deploy-spec-dir']))
+            # shutil.copytree('%s' % tmp_chart_dir, '%s' % self._context.opt['--deploy-spec-dir'])
 
             # add sub-type values
             if self._context.opt['--chart-subtype']:
-               if os.path.isfile('%s/values-%s.yaml' % (self._context.opt['--deploy-spec-dir'], self._context.opt['--chart-subtype'])):
-                  self._context.opt['--values'] = "values-" + self._context.opt['--chart-subtype'] + ".yaml" + ("," + self._context.opt['--values'] if self._context.opt['--values'] else "")
-               else:
-                   print("File %s/values-%s.yaml non found -- pass " %(self._context.opt['--deploy-spec-dir'], self._context.opt['--chart-subtype']) ) 
+                if os.path.isfile('%s/values-%s.yaml' % (self._context.opt['--deploy-spec-dir'], self._context.opt['--chart-subtype'])):
+                    self._context.opt['--values'] = "values-" + self._context.opt['--chart-subtype'] + ".yaml" + (
+                        "," + self._context.opt['--values'] if self._context.opt['--values'] else "")
+                else:
+                    print("File %s/values-%s.yaml non found -- pass " %
+                          (self._context.opt['--deploy-spec-dir'], self._context.opt['--chart-subtype']))
 
-        shutil.copyfile('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir'], '%s/Chart.yaml' % final_deploy_spec_dir)
+        shutil.copyfile(
+            '%s/Chart.yaml' % self._context.opt['--deploy-spec-dir'], '%s/Chart.yaml' % final_deploy_spec_dir)
 
         command = 'upgrade %s' % release
         command = '%s %s' % (command, final_deploy_spec_dir)
         if not self.isHelm2():
-           command = '%s --timeout %ss' % (command, self._context.opt['--timeout'])
-           #Don't retain more than 20 release for history
-           command = '%s --history-max %s' % (command, 20)
+            command = '%s --timeout %ss' % (command,
+                                            self._context.opt['--timeout'])
+            # Don't retain more than 20 release for history
+            command = '%s --history-max %s' % (command, 20)
         else:
-          command = '%s --timeout %s' % (command, self._context.opt['--timeout'])           
-   
+            command = '%s --timeout %s' % (command,
+                                           self._context.opt['--timeout'])
+
         set_command = '--set namespace=%s' % namespace
- 
+
         if self._context.opt['--tiller-namespace'] and self.isHelm2():
             command = '%s --tiller-namespace=%s' % (command, namespace)
         tiller_length = 0
         tiller_json = ''
         try:
             if not self._context.opt['--tiller-namespace'] and self.isHelm2():
-                tiller_json = ''.join(kubectl_cmd.run('get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % ( namespace )))
-                tiller_length = len(pyjq.first('.items[] | .metadata.labels.name', json.loads(tiller_json)))
+                tiller_json = ''.join(kubectl_cmd.run(
+                    'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace)))
+                tiller_length = len(pyjq.first(
+                    '.items[] | .metadata.labels.name', json.loads(tiller_json)))
                 command = '%s --tiller-namespace=%s' % (command, namespace)
         except Exception as e:
             # Not present
@@ -511,73 +567,102 @@ class CLIDriver(object):
 
         # Need to create default helm charts
         if self._context.opt['--create-default-helm']:
-            set_command = '%s --set service.internalPort=%s' % (set_command, self._context.opt['--internal-port'])
+            set_command = '%s --set service.internalPort=%s' % (
+                set_command, self._context.opt['--internal-port'])
 
         set_command = '%s --set ingress.host=%s' % (set_command, host)
-        set_command = '%s --set ingress.subdomain=%s' % (set_command, os.getenv('CDP_DNS_SUBDOMAIN', None))
-        set_command = '%s --set image.commit.sha=sha-%s' % (set_command, os.environ['CI_COMMIT_SHA'][:8])
+        set_command = '%s --set ingress.subdomain=%s' % (
+            set_command, os.getenv('CDP_DNS_SUBDOMAIN', None))
+        set_command = '%s --set image.commit.sha=sha-%s' % (
+            set_command, os.environ['CI_COMMIT_SHA'][:8])
         if (self._context.opt['--image-fullname']):
-          set_command = '%s --set image.fullname=%s' % (set_command,self._context.opt['--image-fullname'] )
+            set_command = '%s --set image.fullname=%s' % (
+                set_command, self._context.opt['--image-fullname'])
         else:
-           set_command = '%s --set image.name=%s' % (set_command, self._context.image_name)
-           set_command = '%s --set image.base_repository=%s' % (set_command, self._context.base_repository)
-           set_command = '%s --set image.fullname=%s/%s:%s' % (set_command, self._context.registry, self._context.registryImagePath, tag)
-           set_command = '%s --set image.registry=%s' % (set_command,  self._context.registry)
-           set_command = '%s --set image.repository=%s' % (set_command, self._context.registryImagePath)
-           set_command = '%s --set image.tag=%s' % (set_command, tag)
-        set_command = '%s --set image.pullPolicy=%s' % (set_command, pullPolicy)
-        tlsSecretNamespace = self._context.getParamOrEnv("ingress-tlsSecretNamespace")
+            set_command = '%s --set image.name=%s' % (
+                set_command, self._context.image_name)
+            set_command = '%s --set image.base_repository=%s' % (
+                set_command, self._context.base_repository)
+            set_command = '%s --set image.fullname=%s/%s:%s' % (
+                set_command, self._context.registry, self._context.registryImagePath, tag)
+            set_command = '%s --set image.registry=%s' % (
+                set_command,  self._context.registry)
+            set_command = '%s --set image.repository=%s' % (
+                set_command, self._context.registryImagePath)
+            set_command = '%s --set image.tag=%s' % (set_command, tag)
+        set_command = '%s --set image.pullPolicy=%s' % (
+            set_command, pullPolicy)
+        tlsSecretNamespace = self._context.getParamOrEnv(
+            "ingress-tlsSecretNamespace")
         if (tlsSecretNamespace):
-            set_command = '%s --set ingress.tlsSecretNamespace=%s' % (set_command, tlsSecretNamespace)
+            set_command = '%s --set ingress.tlsSecretNamespace=%s' % (
+                set_command, tlsSecretNamespace)
         tlsSecretName = self._context.getParamOrEnv("ingress-tlsSecretName")
         if (tlsSecretName):
-            set_command = '%s --set ingress.tlsSecretName=%s' % (set_command, tlsSecretName)
+            set_command = '%s --set ingress.tlsSecretName=%s' % (
+                set_command, tlsSecretName)
         ingressClassName = self.__getIngressClassName()
         if (ingressClassName):
-            set_command = '%s --set ingress.ingressClassName=%s' % (set_command, ingressClassName)
+            set_command = '%s --set ingress.ingressClassName=%s' % (
+                set_command, ingressClassName)
         alternateIngressClassName = self.__getAlternateIngressClassName()
         if (alternateIngressClassName):
-            set_command = '%s --set ingress.alternateIngressClassName=%s' % (set_command, alternateIngressClassName)
+            set_command = '%s --set ingress.alternateIngressClassName=%s' % (
+                set_command, alternateIngressClassName)
 
-        image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
+        image_pull_secret_value = 'cdp-%s-%s' % (
+            self._context.registry, release)
         image_pull_secret_value = image_pull_secret_value.replace(':', '-')
 
         # Need to add secret file for docker registry
         if not self._context.opt['--use-registry'] == 'aws-ecr' and not self._context.opt['--use-registry'] == 'none':
             # Add secret (Only if secret is not exist )
-            self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
-            set_command = '%s --set image.credentials.username=%s' % (set_command, self._context.registry_user_ro)
-            set_command = '%s --set image.credentials.password=%s' % (set_command, self._context.string_protected(self._context.registry_token_ro))
-            set_command = '%s --set image.imagePullSecrets=%s' % (set_command, image_pull_secret_value)
+            self._cmd.run_command(
+                'cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
+            set_command = '%s --set image.credentials.username=%s' % (
+                set_command, self._context.registry_user_ro)
+            set_command = '%s --set image.credentials.password=%s' % (
+                set_command, self._context.string_protected(self._context.registry_token_ro))
+            set_command = '%s --set image.imagePullSecrets=%s' % (
+                set_command, image_pull_secret_value)
 
-        if self._context.opt['--create-gitlab-secret'] or self._context.opt['--create-gitlab-secret-hook'] :
-            if os.getenv('CI_ENVIRONMENT_NAME', None) is None :
-              LOG.err('Can not use gitlab secret because environment is not defined in gitlab job.')
-            secretEnvPattern = 'CDP_SECRET_%s_' % os.getenv('CI_ENVIRONMENT_NAME', None)
-            fileSecretEnvPattern = 'CDP_FILESECRET_%s_' % os.getenv('CI_ENVIRONMENT_NAME', None)
-            #LOG.info('Looking for environnement variables starting with : %s' % secretEnvPattern)
+        if self._context.opt['--create-gitlab-secret'] or self._context.opt['--create-gitlab-secret-hook']:
+            if os.getenv('CI_ENVIRONMENT_NAME', None) is None:
+                LOG.err(
+                    'Can not use gitlab secret because environment is not defined in gitlab job.')
+            secretEnvPattern = 'CDP_SECRET_%s_' % os.getenv(
+                'CI_ENVIRONMENT_NAME', None)
+            fileSecretEnvPattern = 'CDP_FILESECRET_%s_' % os.getenv(
+                'CI_ENVIRONMENT_NAME', None)
+            # LOG.info('Looking for environnement variables starting with : %s' % secretEnvPattern)
             for envVar, envValue in dict(os.environ).items():
-                if envVar.startswith(secretEnvPattern.upper(),0):
-                    self.__create_secret("secret",envVar,envValue,secretEnvPattern)
+                if envVar.startswith(secretEnvPattern.upper(), 0):
+                    self.__create_secret(
+                        "secret", envVar, envValue, secretEnvPattern)
                 if envVar.startswith(fileSecretEnvPattern.upper(), 0):
-                    self.__create_secret("file-secret", envVar, envValue, fileSecretEnvPattern)
+                    self.__create_secret(
+                        "file-secret", envVar, envValue, fileSecretEnvPattern)
 
-        set_command = self.add_value_to_command_if_not_empty(set_command, "team", self._context.getParamOrEnv("team"))
-        set_command = self.add_value_to_command_if_not_empty(set_command, "teamDomain", self._context.getParamOrEnv("team-domain"))
-        set_command = self.add_value_to_command_if_not_empty(set_command, "logcollector.logindex", self._context.getParamOrEnv("logindex"))
-        set_command = self.add_value_to_command_if_not_empty(set_command, "logcollector.logtopic", self._context.getParamOrEnv("logtopic"))
+        set_command = self.add_value_to_command_if_not_empty(
+            set_command, "team", self._context.getParamOrEnv("team"))
+        set_command = self.add_value_to_command_if_not_empty(
+            set_command, "teamDomain", self._context.getParamOrEnv("team-domain"))
+        set_command = self.add_value_to_command_if_not_empty(
+            set_command, "logcollector.logindex", self._context.getParamOrEnv("logindex"))
+        set_command = self.add_value_to_command_if_not_empty(
+            set_command, "logcollector.logtopic", self._context.getParamOrEnv("logtopic"))
 
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
-        
+
         if not self.isHelm2():
-          try:
-            kubectl_cmd.run('get namespace %s' % (namespace))
-          except Exception as e:
-            LOG.verbose("Namespace not exists, create it")
-            command = '%s --create-namespace' % (command)
+            try:
+                kubectl_cmd.run('get namespace %s' % (namespace))
+            except Exception as e:
+                LOG.verbose("Namespace not exists, create it")
+                command = '%s --create-namespace' % (command)
         else:
-            command = '%s --force' % command        
+            command = '%s --force' % command
 
         command = '%s --wait' % command
         command = '%s --atomic' % command
@@ -585,40 +670,48 @@ class CLIDriver(object):
         now = datetime.datetime.utcnow()
         date_format = '%Y-%m-%dT%H%M%S'
         if self._context.opt['--release-ttl']:
-            command = '%s --description deletionTimestamp=%sZ' % (command,(now + datetime.timedelta(minutes = int(self._context.opt['--release-ttl']))).strftime(date_format))
+            command = '%s --description deletionTimestamp=%sZ' % (command, (now + datetime.timedelta(
+                minutes=int(self._context.opt['--release-ttl']))).strftime(date_format))
 
         # Template charts for secret
         tmp_templating_file = '%s/all_resources.tmp' % final_deploy_spec_dir
         if not self.isHelm2():
-            template_command = 'template %s %s' % (release, self._context.opt['--deploy-spec-dir'])
+            template_command = 'template %s %s' % (
+                release, self._context.opt['--deploy-spec-dir'])
         else:
-            template_command = 'template %s' % (self._context.opt['--deploy-spec-dir'])
-        
+            template_command = 'template %s' % (
+                self._context.opt['--deploy-spec-dir'])
+
         template_command = '%s %s' % (template_command, set_command)
         template_command = self.add_custom_values(template_command)
         if self._context.opt['--values']:
             valuesFiles = self._context.opt['--values'].strip().split(',')
-            values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
+            values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (
+                ' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
             template_command = '%s %s' % (template_command, values)
 
         if self.isHelm2():
-          template_command = '%s --name=%s' % (template_command, release)
+            template_command = '%s --name=%s' % (template_command, release)
 
         template_command = '%s --namespace=%s' % (template_command, namespace)
         template_command = '%s > %s' % (template_command, tmp_templating_file)
-        helm_cmd.run("dependency update %s" % self._context.opt['--deploy-spec-dir'])
+        helm_cmd.run("dependency update %s" %
+                     self._context.opt['--deploy-spec-dir'])
         try:
             # Suppression de l'entrée dependencies car le helm upgrade écrase les modifications apportées après le helm tempate
             if os.path.isdir('%s/charts' % self._context.opt['--deploy-spec-dir']):
-               with open('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir']) as chartyml:
-                 data = yaml.load(chartyml)
-                 if 'dependencies' in data:
-                    del data['dependencies']
-                    with open('%s/Chart.yaml' % final_deploy_spec_dir, "w") as f:
-                        yaml.dump(data, f)
+                with open('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir']) as chartyml:
+                    data = yaml.load(chartyml)
+                    if 'dependencies' in data:
+                        del data['dependencies']
+                        with open('%s/Chart.yaml' % final_deploy_spec_dir, "w") as f:
+                            yaml.dump(data, f)
         except OSError as e:
-            LOG.error(str(e))        
+            LOG.error(str(e))
         helm_cmd.run(template_command)
+
+        # Exit now
+        return
 
         with open(tmp_templating_file, 'r') as stream:
             docs = list(yaml.load_all(stream))
@@ -627,85 +720,101 @@ class CLIDriver(object):
                 if doc is not None:
                     # Ajout du label deletable sur tous les objets si la release est temporaire
                     if "metadata" in doc and "labels" in doc['metadata']:
-                       doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--release-ttl'] else "false"
+                        doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--release-ttl'] else "false"
 
                     final_docs.append(doc)
                     CLIDriver.addGitlabLabels(doc)
-                    #Manage Deployement and
-                    if os.getenv('CDP_MONITORING')and os.getenv('CDP_MONITORING', 'TRUE').upper() != "FALSE":
-                        if os.getenv('CDP_ALERTING', 'TRUE').upper()=="FALSE":
+                    # Manage Deployement and
+                    if os.getenv('CDP_MONITORING') and os.getenv('CDP_MONITORING', 'TRUE').upper() != "FALSE":
+                        if os.getenv('CDP_ALERTING', 'TRUE').upper() == "FALSE":
                             doc = CLIDriver.addMonitoringLabel(doc, False)
                         else:
                             doc = CLIDriver.addMonitoringLabel(doc, True)
                     # Ajout du champ imagePulLSecrets seulement si par les charts par défaut car déjà prévu. Retro-compatiibilité
                     if not self._context.opt['--use-chart']:
-                        if not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
-                           doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
-                    
+                        if not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and 'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
+                            doc = CLIDriver.addImageSecret(
+                                doc, image_pull_secret_value)
+
                     LOG.verbose(doc)
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
             LOG.info(yaml.dump_all(final_docs))
             yaml.dump_all(final_docs, outfile)
 
-        #Run conftest
+        # Run conftest
         conftest_temp_dir = '%s_conftest' % self._context.opt['--deploy-spec-dir']
         try:
             os.makedirs(conftest_temp_dir)
-            shutil.copyfile('%s/all_resources.yaml' % final_template_deploy_spec_dir, '%s/all_resources.yaml' % conftest_temp_dir)
+            shutil.copyfile('%s/all_resources.yaml' % final_template_deploy_spec_dir,
+                            '%s/all_resources.yaml' % conftest_temp_dir)
         except OSError as e:
             LOG.error(str(e))
 
         if (os.path.isdir('%s/data' % self._context.opt['--deploy-spec-dir'])):
-            shutil.copytree('%s/data' % self._context.opt['--deploy-spec-dir'], '%s/data' % conftest_temp_dir)
-        
-        if (os.path.isdir('%s/policy' % self._context.opt['--deploy-spec-dir'])):
-            shutil.copytree('%s/policy' % self._context.opt['--deploy-spec-dir'], '%s/policy' % conftest_temp_dir)
+            shutil.copytree(
+                '%s/data' % self._context.opt['--deploy-spec-dir'], '%s/data' % conftest_temp_dir)
 
-        self.__runConftest(os.path.abspath(conftest_temp_dir), 'all_resources.yaml'.split(','))
+        if (os.path.isdir('%s/policy' % self._context.opt['--deploy-spec-dir'])):
+            shutil.copytree(
+                '%s/policy' % self._context.opt['--deploy-spec-dir'], '%s/policy' % conftest_temp_dir)
+
+        self.__runConftest(os.path.abspath(conftest_temp_dir),
+                           'all_resources.yaml'.split(','))
 
         if self._context.opt['--check-only']:
-           print("Deploy command : %s " %command)
+            print("Deploy command : %s " % command)
         else:
-           # Install or Upgrade environnement
-           try:
-             self._cmd.run_command('/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release))            
-             helm_cmd.run(command)
-           except OSError as e: 
-             # Recuperation des events pour debuggage
-             kubectl_cmd.run('get events --sort-by=.metadata.creationTimestamp --field-selector=type!=Normal|tail -10')
-             sys.exit("\x1b[31;1mERROR : cdp k8s aborted\x1b[0m")
-   
-           # Tout s'est bien passé, on clean la release ou le namespace si dernière release
-           if cleanupHelm2:
-              self._cmd.run_command("/cdp/scripts/cleanup.sh %s -r %s" % ("-n " + namespace if self._context.opt['--tiller-namespace'] else "", release))            
-   
+            # Install or Upgrade environnement
+            try:
+                self._cmd.run_command(
+                    '/cdp/scripts/uninstall_pending_release.sh -n %s -r %s' % (namespace, release))
+                helm_cmd.run(command)
+            except OSError as e:
+                #  Recuperation des events pour debuggage
+                kubectl_cmd.run(
+                    'get events --sort-by=.metadata.creationTimestamp --field-selector=type!=Normal|tail -10')
+                sys.exit("\x1b[31;1mERROR : cdp k8s aborted\x1b[0m")
+
+            #  Tout s'est bien passé, on clean la release ou le namespace si dernière release
+            if cleanupHelm2:
+                self._cmd.run_command("/cdp/scripts/cleanup.sh %s -r %s" % (
+                    "-n " + namespace if self._context.opt['--tiller-namespace'] else "", release))
+
         self.__update_environment()
 
-    def __create_secret(self,type,envVar,envValue,secretEnvPattern):
+    def __create_secret(self, type, envVar, envValue, secretEnvPattern):
         if type == 'file-secret':
             secretFile = open(envValue, "r")
             fileContent = secretFile.read()
             secretFile.close()
-            envValue = str(base64.b64encode(bytes(fileContent, 'utf-8')), 'utf-8')
-        if not os.path.isfile('%s/templates/cdp-gitlab-%s.yaml' % (self._context.opt['--deploy-spec-dir'],type)):
-            self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-%s.yaml %s/templates/' % (type , self._context.opt['--deploy-spec-dir']))
-        self._cmd.run_secret_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-%s.yaml' % (envVar[len(secretEnvPattern):],envValue,self._context.opt['--deploy-spec-dir'],type))
+            envValue = str(base64.b64encode(
+                bytes(fileContent, 'utf-8')), 'utf-8')
+        if not os.path.isfile('%s/templates/cdp-gitlab-%s.yaml' % (self._context.opt['--deploy-spec-dir'], type)):
+            self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-%s.yaml %s/templates/' %
+                                  (type, self._context.opt['--deploy-spec-dir']))
+        self._cmd.run_secret_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-%s.yaml' % (
+            envVar[len(secretEnvPattern):], envValue, self._context.opt['--deploy-spec-dir'], type))
         if self._context.opt['--create-gitlab-secret-hook']:
-            if not os.path.isfile('%s/templates/cdp-gitlab-%s.yaml' % (self._context.opt['--deploy-spec-dir'],type+"-hook")):
-                self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-%s.yaml %s/templates/' % (type+"-hook" , self._context.opt['--deploy-spec-dir']))
-            self._cmd.run_secret_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-%s.yaml' % (envVar[len(secretEnvPattern):],envValue,self._context.opt['--deploy-spec-dir'],type+"-hook"))
+            if not os.path.isfile('%s/templates/cdp-gitlab-%s.yaml' % (self._context.opt['--deploy-spec-dir'], type+"-hook")):
+                self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-%s.yaml %s/templates/' % (
+                    type+"-hook", self._context.opt['--deploy-spec-dir']))
+            self._cmd.run_secret_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-%s.yaml' % (
+                envVar[len(secretEnvPattern):], envValue, self._context.opt['--deploy-spec-dir'], type+"-hook"))
 
     @staticmethod
-    def addImageSecret(doc,image_pull_secret_value):        
+    def addImageSecret(doc, image_pull_secret_value):
         if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet' or doc['kind'] == 'Job':
             yaml_doc = doc['spec']['template']['spec']
             if 'imagePullSecrets' in yaml_doc and yaml_doc['imagePullSecrets']:
                 for image_pull_secret in yaml_doc['imagePullSecrets']:
                     if (image_pull_secret['name'] != '%s' % image_pull_secret_value):
-                        doc['spec']['template']['spec']['imagePullSecrets'].append({'name': '%s' % image_pull_secret_value})
-                        LOG.info('Append image pull secret %s' % image_pull_secret_value)
+                        doc['spec']['template']['spec']['imagePullSecrets'].append(
+                            {'name': '%s' % image_pull_secret_value})
+                        LOG.info('Append image pull secret %s' %
+                                 image_pull_secret_value)
             else:
-                doc['spec']['template']['spec']['imagePullSecrets'] = [{'name': '%s' % image_pull_secret_value}]
+                doc['spec']['template']['spec']['imagePullSecrets'] = [
+                    {'name': '%s' % image_pull_secret_value}]
                 LOG.info('Add imagePullSecret')
 
         elif doc['kind'] == 'CronJob':
@@ -716,61 +825,67 @@ class CLIDriver(object):
                     if image_pull_secret['name'] == '%s' % image_pull_secret_value:
                         LOG.info('secret name find')
                         if (image_pull_secret['name'] != '%s' % image_pull_secret_value):
-                            doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets'].append({'name': '%s' % image_pull_secret_value})
-                            LOG.info('Append image pull secret %s' % image_pull_secret_value)
+                            doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets'].append(
+                                {'name': '%s' % image_pull_secret_value})
+                            LOG.info('Append image pull secret %s' %
+                                     image_pull_secret_value)
             else:
-                 doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets'] = [{'name': '%s' % image_pull_secret_value}]
-                 LOG.info('Add imagePullSecret')
+                doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets'] = [
+                    {'name': '%s' % image_pull_secret_value}]
+                LOG.info('Add imagePullSecret')
         return doc
 
     @staticmethod
-    def addMonitoringLabel(doc,escalation):
+    def addMonitoringLabel(doc, escalation):
         if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet' or doc['kind'] == 'Service':
-             doc['metadata']['labels']['monitoring'] = 'true'
-             if 'template' in doc['spec'].keys():
-                doc['spec']['template']['metadata']['labels']['monitoring']  = 'true'
-             LOG.warning("Add monitoring Label")
-             if escalation:
-                 doc['metadata']['labels']['owner-escalation'] = 'true'
-                 if 'template' in doc['spec'].keys():
+            doc['metadata']['labels']['monitoring'] = 'true'
+            if 'template' in doc['spec'].keys():
+                doc['spec']['template']['metadata']['labels']['monitoring'] = 'true'
+            LOG.warning("Add monitoring Label")
+            if escalation:
+                doc['metadata']['labels']['owner-escalation'] = 'true'
+                if 'template' in doc['spec'].keys():
                     doc['spec']['template']['metadata']['labels']['owner-escalation'] = 'true'
-             else:
-                 doc['metadata']['labels']['owner-escalation'] = 'false'
-                 if 'template' in doc['spec'].keys():
+            else:
+                doc['metadata']['labels']['owner-escalation'] = 'false'
+                if 'template' in doc['spec'].keys():
                     doc['spec']['template']['metadata']['labels']['owner-escalation'] = 'false'
         return doc
 
     def addGitlabLabels(doc):
         if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet' or doc['kind'] == 'Service':
-           gl = gitlab.Gitlab(os.environ['CDP_GITLAB_API_URL'], private_token=os.environ['CDP_GITLAB_API_TOKEN'])
-           project = gl.projects.get(os.environ['CI_PROJECT_ID'])
-           labels={}
-           for index, value in enumerate(project.attributes['tag_list']):
-               if "=" in value:
-                  tag = value.split("=")
-                  if not tag[0] in doc['metadata']['labels']:
-                     doc['metadata']['labels'][tag[0]] = tag[1]
-                  if 'template' in doc['spec'].keys():
-                     if not tag[0] in doc['spec']['template']['metadata']['labels']:
-                      doc['spec']['template']['metadata']['labels'][tag[0]] = tag[1]
+            gl = gitlab.Gitlab(
+                os.environ['CDP_GITLAB_API_URL'], private_token=os.environ['CDP_GITLAB_API_TOKEN'])
+            project = gl.projects.get(os.environ['CI_PROJECT_ID'])
+            labels = {}
+            for index, value in enumerate(project.attributes['tag_list']):
+                if "=" in value:
+                    tag = value.split("=")
+                    if not tag[0] in doc['metadata']['labels']:
+                        doc['metadata']['labels'][tag[0]] = tag[1]
+                    if 'template' in doc['spec'].keys():
+                        if not tag[0] in doc['spec']['template']['metadata']['labels']:
+                            doc['spec']['template']['metadata']['labels'][tag[0]] = tag[1]
         return doc
 
     def __addPrefixToTag(self, image_repo, tag, prefix):
-      try:
-        prefixTag = "%s-%s" % (prefix, tag)
-        source_image_tag = self.__getImageTag(image_repo,  tag)
-        dest_image_tag = self.__getImageTag(image_repo, prefixTag)
-        LOG.info("Nouveau tag %s sur l'image %s" % (dest_image_tag, source_image_tag))
-        # Utilisation de Skopeo
-        self._cmd.run_command('skopeo copy docker://%s docker://%s' % (source_image_tag, dest_image_tag))
-      except OSError as e:
-               print('************************** SKOPEO *******************************')
-               print(e)
-               print('****************************************************************')
-               raise e          
-        
-      return prefixTag
-        
+        try:
+            prefixTag = "%s-%s" % (prefix, tag)
+            source_image_tag = self.__getImageTag(image_repo,  tag)
+            dest_image_tag = self.__getImageTag(image_repo, prefixTag)
+            LOG.info("Nouveau tag %s sur l'image %s" %
+                     (dest_image_tag, source_image_tag))
+            # Utilisation de Skopeo
+            self._cmd.run_command(
+                'skopeo copy docker://%s docker://%s' % (source_image_tag, dest_image_tag))
+        except OSError as e:
+            print('************************** SKOPEO *******************************')
+            print(e)
+            print('****************************************************************')
+            raise e
+
+        return prefixTag
+
     def __buildTagAndPushOnDockerRegistry(self, tag):
         img_cmd = PodmanCommand(self._cmd)
         image_tag = self.__getImageTag(self.__getImageName(), tag)
@@ -778,52 +893,62 @@ class CLIDriver(object):
             sys.exit("\x1b[31;1mERROR : docker-compose is deprecated.\x1b[0m")
 
         else:
-          images_to_build = self.__getImagesToBuild(self.__getImageName(), tag)
-          for image_to_build in images_to_build:
-            dockerfile = image_to_build["dockerfile"]
-            context = image_to_build["context"]
-            target = image_to_build["target"]
-            if (target is None and self._context.opt['--docker-build-target']):
-                target = self._context.opt['--docker-build-target']
+            images_to_build = self.__getImagesToBuild(
+                self.__getImageName(), tag)
+            for image_to_build in images_to_build:
+                dockerfile = image_to_build["dockerfile"]
+                context = image_to_build["context"]
+                target = image_to_build["target"]
+                if (target is None and self._context.opt['--docker-build-target']):
+                    target = self._context.opt['--docker-build-target']
 
-            full_dockerfile_path = context +'/' + dockerfile
-            image_tag = image_to_build["image"]
-            # Hadolint
-            self._cmd.run_command('hadolint %s/%s' % (context, dockerfile), raise_error = False)
+                full_dockerfile_path = context + '/' + dockerfile
+                image_tag = image_to_build["image"]
+                # Hadolint
+                self._cmd.run_command('hadolint %s/%s' %
+                                      (context, dockerfile), raise_error=False)
 
-            # Tag docker image
-            docker_build_command = 'build -t %s -f %s %s' % (image_tag, full_dockerfile_path, context)
-            if target is not None:
-              docker_build_command = '%s --target %s' % (docker_build_command, target)
-            if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and self._context.opt['--use-registry'] == 'artifactory':
-              docker_build_command = '%s --label com.jfrog.artifactory.retention.maxCount="%s"' % (docker_build_command, os.environ['CDP_ARTIFACTORY_TAG_RETENTION'])
+                # Tag docker image
+                docker_build_command = 'build -t %s -f %s %s' % (
+                    image_tag, full_dockerfile_path, context)
+                if target is not None:
+                    docker_build_command = '%s --target %s' % (
+                        docker_build_command, target)
+                if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and self._context.opt['--use-registry'] == 'artifactory':
+                    docker_build_command = '%s --label com.jfrog.artifactory.retention.maxCount="%s"' % (
+                        docker_build_command, os.environ['CDP_ARTIFACTORY_TAG_RETENTION'])
 
-            if self._context.opt['--build-arg']:
-                self._context.opt['--build-arg'].sort()
-                for buildarg in self._context.opt['--build-arg']:
-                    docker_build_command = '%s --build-arg %s' % (docker_build_command, buildarg)
+                if self._context.opt['--build-arg']:
+                    self._context.opt['--build-arg'].sort()
+                    for buildarg in self._context.opt['--build-arg']:
+                        docker_build_command = '%s --build-arg %s' % (
+                            docker_build_command, buildarg)
 
-            img_cmd.run(docker_build_command)
-            # Push docker image
-            img_cmd.run('push %s' % (image_tag))
-            
+                img_cmd.run(docker_build_command)
+                # Push docker image
+                img_cmd.run('push %s' % (image_tag))
+
     def __conftest(self):
         dir = self._context.opt['--deploy-spec-dir']
-        files = [f for f in os.listdir(dir) if os.path.isfile(os.path.join(dir,f))]
-        self.__runConftest(dir,files,False)
+        files = [f for f in os.listdir(
+            dir) if os.path.isfile(os.path.join(dir, f))]
+        self.__runConftest(dir, files, False)
 
     def __callArtifactoryFile(self, tag, upload_file, http_verb):
         if http_verb == 'PUT':
-            self._cmd.run_command('curl --fail -X PUT %s/%s/%s/ -H X-JFrog-Art-Api:%s -T %s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, os.environ['CDP_ARTIFACTORY_TOKEN'], upload_file))
+            self._cmd.run_command('curl --fail -X PUT %s/%s/%s/ -H X-JFrog-Art-Api:%s -T %s' % (
+                os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, os.environ['CDP_ARTIFACTORY_TOKEN'], upload_file))
         elif http_verb == 'DELETE':
-            self._cmd.run_command('curl --fail -X DELETE %s/%s/%s/%s -H X-JFrog-Art-Api:%s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, upload_file, os.environ['CDP_ARTIFACTORY_TOKEN']))
+            self._cmd.run_command('curl --fail -X DELETE %s/%s/%s/%s -H X-JFrog-Art-Api:%s' % (
+                os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, upload_file, os.environ['CDP_ARTIFACTORY_TOKEN']))
 
     def __validator(self):
         url = 'https://%s/%s' % (self.__getHost(), self._context.opt['--path'])
 
         if self._context.opt['--validate-configurations']:
-            url_validator = '%s/validate/configurations?url=%s' % (os.environ['CDP_BP_VALIDATOR_HOST'], url)
-        else :
+            url_validator = '%s/validate/configurations?url=%s' % (
+                os.environ['CDP_BP_VALIDATOR_HOST'], url)
+        else:
             raise ValueError('NOT IMPLEMENTED')
 
         LOG.info('---------- Silent mode ----------')
@@ -832,46 +957,50 @@ class CLIDriver(object):
         LOG.info('---------- Failed mode ----------')
         self._cmd.run_command('curl -sf --output /dev/null %s' % url_validator)
 
-    def __getImagesToBuild(self,image, tag):
+    def __getImagesToBuild(self, image, tag):
 
         os.environ['CDP_TAG'] = tag
-        os.environ['CDP_REGISTRY'] = "%s/%s" % (self._context.registry, self._context.compatCDP_REGISTRY)
+        os.environ['CDP_REGISTRY'] = "%s/%s" % (
+            self._context.registry, self._context.compatCDP_REGISTRY)
         os.environ['CDP_REGISTRY_PATH'] = "%s" % (self._context.registry)
-        os.environ['CDP_BASE_REPOSITORY'] = "%s" % (self._context.base_repository)
+        os.environ['CDP_BASE_REPOSITORY'] = "%s" % (
+            self._context.base_repository)
         os.environ['CDP_REPOSITORY'] = "%s" % (self._context.registryImagePath)
         os.environ['CDP_IMAGE'] = "%s" % (self._context.image_name)
         os.environ['CDP_IMAGE_PATH'] = image
 
         # Default image if no build file
-        images_to_build = [ {"composant": "image", 
-                             "dockerfile" : "Dockerfile",
-                             "context": self._context.opt['--build-context'],
-                             "target": self._context.opt['--docker-build-target'],
-                             "image": self.__getImageTag(image, tag)}]
+        images_to_build = [{"composant": "image",
+                            "dockerfile": "Dockerfile",
+                            "context": self._context.opt['--build-context'],
+                            "target": self._context.opt['--docker-build-target'],
+                            "image": self.__getImageTag(image, tag)}]
         if self._context.isMultiBuildContext():
-           images_to_build = []
-           with open(self._context.opt['--build-file']) as chartyml:
-                 data = yaml.load(chartyml)
-                 for service in data["services"]:
-                     servicedef = data["services"][service]
-                     if ("target" not in servicedef["build"]):
+            images_to_build = []
+            with open(self._context.opt['--build-file']) as chartyml:
+                data = yaml.load(chartyml)
+                for service in data["services"]:
+                    servicedef = data["services"][service]
+                    if ("target" not in servicedef["build"]):
                         servicedef["build"]["target"] = None
 
-                     if ("CDP_REGISTRY" in servicedef["image"]):
-                          LOG.warning("\x1b[31;1mWARN : Variable CDP_REGISTRY in build-file is DEPRECATED and must be replaced by CDP_REGISTRY_PATH. See https://confluence.sipaof.fr/pages/viewpage.action?pageId=439846456\x1b[0m")
-                     images_to_build.append({"composant": service, 
-                                             "dockerfile" : servicedef["build"]["dockerfile"],
-                                             "context": servicedef["build"]["context"],
-                                             "target": servicedef["build"]["target"], 
-                                             "image": envsubst(servicedef["image"])})
+                    if ("CDP_REGISTRY" in servicedef["image"]):
+                        LOG.warning(
+                            "\x1b[31;1mWARN : Variable CDP_REGISTRY in build-file is DEPRECATED and must be replaced by CDP_REGISTRY_PATH. See https://confluence.sipaof.fr/pages/viewpage.action?pageId=439846456\x1b[0m")
+                    images_to_build.append({"composant": service,
+                                            "dockerfile": servicedef["build"]["dockerfile"],
+                                            "context": servicedef["build"]["context"],
+                                            "target": servicedef["build"]["target"],
+                                            "image": envsubst(servicedef["image"])})
         return images_to_build
 
     def __getImageName(self):
-        image_name = '%s/%s' % (self._context.registry, self._context.registryImagePath)
+        image_name = '%s/%s' % (self._context.registry,
+                                self._context.registryImagePath)
         return image_name
 
     def __getImageTag(self, image_name, tag):
-        return '%s:%s' %  (image_name, tag)
+        return '%s:%s' % (image_name, tag)
 
     def __getTagBranchName(self):
         return os.environ['CI_COMMIT_REF_SLUG']
@@ -888,20 +1017,22 @@ class CLIDriver(object):
     def __getNamespace(self):
         name = os.environ['CI_PROJECT_NAME']
         if (self._context.opt['--namespace-name']):
-            name = self._context.opt['--namespace-name'] 
+            name = self._context.opt['--namespace-name']
         return name.replace('_', '-')[:63]
 
     # get release name based on given parameters
     def __getRelease(self):
         if self._context.opt['--release-project-branch-name']:
             projectFistLetterEachWord = self.__getShortProjectName()
-            release = '%s-%s' % (projectFistLetterEachWord, os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))
+            release = '%s-%s' % (projectFistLetterEachWord, os.getenv(
+                'CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))
         elif self._context.opt['--release-project-env-name']:
             release = self.__getEnvName()
         elif self._context.opt['--release-custom-name']:
-            release =  (self.__getShortProjectName() +'-'+ self._context.opt['--release-custom-name'])
+            release = (self.__getShortProjectName() + '-' +
+                       self._context.opt['--release-custom-name'])
         elif self._context.opt['--release-name']:
-            release =  self._context.opt['--release-name']
+            release = self._context.opt['--release-name']
         elif self._context.opt['--release-project-name']:
             release = os.environ['CI_PROJECT_NAME']
         elif self._context.opt['--release-shortproject-name']:
@@ -909,21 +1040,25 @@ class CLIDriver(object):
         else:
             release = self.__getNamespace()
         # K8s ne supporte plus les . dans les noms de release
-        return release.replace('_', '-').replace(".","-")[:53]
+        return release.replace('_', '-').replace(".", "-")[:53]
 
     def __getShortProjectName(self):
         namespace = os.environ['CI_PROJECT_NAME']
-        projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z0-9]',namespace)]) 
+        projectFistLetterEachWord = ''.join([word if len(
+            word) == 0 else word[0] for word in re.split('[^a-zA-Z0-9]', namespace)])
         return projectFistLetterEachWord + os.environ['CI_PROJECT_ID']
 
     def __getEnvName(self):
         # Get k8s namespace
-        if(self.__getEnvironmentName() is not None):
+        if (self.__getEnvironmentName() is not None):
             # Get first letter for each word
             projectFistLetterEachWord = self.__getShortProjectName()
-            name = '%s-env-%s' % (projectFistLetterEachWord, self.__getEnvironmentName().replace('/', '-'))    # Get deployment host
-        elif(self.__getEnvironmentName() is None):
-            LOG.err('can not use environnement release option because environment is not defined in gitlab job.')
+            # Get deployment host
+            name = '%s-env-%s' % (projectFistLetterEachWord,
+                                  self.__getEnvironmentName().replace('/', '-'))
+        elif (self.__getEnvironmentName() is None):
+            LOG.err(
+                'can not use environnement release option because environment is not defined in gitlab job.')
 
         return name.replace('_', '-')
 
@@ -935,9 +1070,10 @@ class CLIDriver(object):
             if ci_runner_tags is not None:
                 tags = ci_runner_tags.strip().split(',')
                 for tag in tags:
-                    dns_subdomain = os.getenv('CDP_DNS_SUBDOMAIN_%s' % tag.strip().upper().replace('-', '_'), None)
+                    dns_subdomain = os.getenv(
+                        'CDP_DNS_SUBDOMAIN_%s' % tag.strip().upper().replace('-', '_'), None)
                     if dns_subdomain is not None:
-                        break;
+                        break
 
         if dns_subdomain is None:
             dns_subdomain = os.getenv('CDP_DNS_SUBDOMAIN_DEFAULT', None)
@@ -946,31 +1082,39 @@ class CLIDriver(object):
         # Get k8s namespace
         return '%s.%s' % (self.__getRelease(), dns_subdomain)
 
-    def __simulate_merge_on(self, force_git_config = False):
+    def __simulate_merge_on(self, force_git_config=False):
         if force_git_config or self._context.opt['--simulate-merge-on']:
             git_cmd = GitCommand(self._cmd, '', True)
 
-            git_cmd.run('config user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
-            git_cmd.run('config user.name \"%s\"' % os.environ['GITLAB_USER_NAME'])
+            git_cmd.run('config user.email \"%s\"' %
+                        os.environ['GITLAB_USER_EMAIL'])
+            git_cmd.run('config user.name \"%s\"' %
+                        os.environ['GITLAB_USER_NAME'])
             git_cmd.run('fetch')
 
             if force_git_config:
                 git_cmd.run('checkout %s' % os.environ['CI_COMMIT_REF_NAME'])
 
             if self._context.opt['--simulate-merge-on']:
-                LOG.notice('Build docker image with the merge current branch on %s branch', self._context.opt['--simulate-merge-on'])
+                LOG.notice('Build docker image with the merge current branch on %s branch',
+                           self._context.opt['--simulate-merge-on'])
                 # Merge branch on selected branch
-                git_cmd.run('checkout %s' % self._context.opt['--simulate-merge-on'])
-                git_cmd.run('reset --hard origin/%s' % self._context.opt['--simulate-merge-on'])
-                git_cmd.run('merge %s --no-commit --no-ff' %  os.environ['CI_COMMIT_SHA'])
+                git_cmd.run('checkout %s' %
+                            self._context.opt['--simulate-merge-on'])
+                git_cmd.run('reset --hard origin/%s' %
+                            self._context.opt['--simulate-merge-on'])
+                git_cmd.run('merge %s --no-commit --no-ff' %
+                            os.environ['CI_COMMIT_SHA'])
 
             # TODO Exception process
         else:
-            LOG.notice('Build docker image with the current branch : %s', os.environ['CI_COMMIT_REF_NAME'])
+            LOG.notice('Build docker image with the current branch : %s',
+                       os.environ['CI_COMMIT_REF_NAME'])
 
     def __get_environment(self):
         if os.getenv('CDP_GITLAB_API_URL', None) is not None and os.getenv('CDP_GITLAB_API_TOKEN', None) is not None:
-            gl = gitlab.Gitlab(os.environ['CDP_GITLAB_API_URL'], private_token=os.environ['CDP_GITLAB_API_TOKEN'])
+            gl = gitlab.Gitlab(
+                os.environ['CDP_GITLAB_API_URL'], private_token=os.environ['CDP_GITLAB_API_TOKEN'])
             # Get a project by ID
             project = gl.projects.get(os.environ['CI_PROJECT_ID'])
             LOG.verbose('Project %s' % project)
@@ -986,7 +1130,8 @@ class CLIDriver(object):
             return env
 
     def __get_team(self):
-        gl = gitlab.Gitlab(os.environ['CDP_GITLAB_API_URL'], private_token=os.environ['CDP_GITLAB_API_TOKEN'])
+        gl = gitlab.Gitlab(os.environ['CDP_GITLAB_API_URL'],
+                           private_token=os.environ['CDP_GITLAB_API_TOKEN'])
         # Get a project by ID
         project = gl.projects.get(os.environ['CI_PROJECT_ID'])
         pattern = re.compile("^team=")
@@ -998,23 +1143,26 @@ class CLIDriver(object):
     def __update_environment(self):
         if os.getenv('CI_ENVIRONMENT_NAME', None) is not None:
             LOG.info('******************** Update env url ********************')
-            LOG.info('Search environment %s.' % os.getenv('CI_ENVIRONMENT_NAME', None))
+            LOG.info('Search environment %s.' %
+                     os.getenv('CI_ENVIRONMENT_NAME', None))
             env = self.__get_environment()
             if env is not None:
                 env.external_url = 'https://%s' % self.__getHost()
                 env.save()
-                LOG.info('Update external url, unless present in the file gitlabci.yaml: %s.' % env.external_url)
+                LOG.info(
+                    'Update external url, unless present in the file gitlabci.yaml: %s.' % env.external_url)
             else:
-                LOG.warning('Environment %s not found.' % os.getenv('CI_ENVIRONMENT_NAME', None))
+                LOG.warning('Environment %s not found.' %
+                            os.getenv('CI_ENVIRONMENT_NAME', None))
 
     def __getLabelName(self):
-        return ( os.getenv("CDP_REGISTRY_LABEL"))
+        return (os.getenv("CDP_REGISTRY_LABEL"))
 
     def __getIngressClassName(self):
-        return ( self._context.getParamOrEnv('ingress-className'))
+        return (self._context.getParamOrEnv('ingress-className'))
 
     def __getAlternateIngressClassName(self):
-        return ( self._context.getParamOrEnv('ingress-className-alternate'))
+        return (self._context.getParamOrEnv('ingress-className-alternate'))
 
     '''
     Lancement des tests conftest. 
@@ -1022,53 +1170,57 @@ class CLIDriver(object):
                   restpectivement les policies à appliquer et les éventuelles valeurs spécifiques       
       <charts>   : Tableau des charts à controller
     '''
+
     def __runConftest(self, chartdir, charts, withWorkingDir=True):
         no_conftest = self._context.getParamOrEnv('no-conftest')
         if (no_conftest is True or no_conftest == "true"):
             return
 
-       
-        conftest_repo = self._context.getParamOrEnv('conftest-repo','')
-        if (conftest_repo != "" and conftest_repo != "none" ):
-            try: 
-               repo = conftest_repo.split(":")
-               repo_name = repo[0].replace("/","%2F")
-               repo_sha= ""
-               repo_dir= ""
-               strip=1
-               if (len(repo) > 1):
-                   if len(repo[1]) > 0:
-                     repo_dir="'*/%s'" % repo[1]
-                     strip= repo_dir.count("/") + 1
-                   if (len(repo) > 2):
-                     repo_sha="?sha=%s" % repo[2]
+        conftest_repo = self._context.getParamOrEnv('conftest-repo', '')
+        if (conftest_repo != "" and conftest_repo != "none"):
+            try:
+                repo = conftest_repo.split(":")
+                repo_name = repo[0].replace("/", "%2F")
+                repo_sha = ""
+                repo_dir = ""
+                strip = 1
+                if (len(repo) > 1):
+                    if len(repo[1]) > 0:
+                        repo_dir = "'*/%s'" % repo[1]
+                        strip = repo_dir.count("/") + 1
+                    if (len(repo) > 2):
+                        repo_sha = "?sha=%s" % repo[2]
 
-               cmd = 'curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz%s | tar zx --wildcards --strip %s -C %s %s' % (os.environ['CDP_GITLAB_API_TOKEN'], os.environ['CDP_GITLAB_API_URL'], repo_name,repo_sha, strip, chartdir, repo_dir)
-               self._cmd.run_secret_command(cmd.strip(), None, None, False)
+                cmd = 'curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz%s | tar zx --wildcards --strip %s -C %s %s' % (
+                    os.environ['CDP_GITLAB_API_TOKEN'], os.environ['CDP_GITLAB_API_URL'], repo_name, repo_sha, strip, chartdir, repo_dir)
+                self._cmd.run_secret_command(cmd.strip(), None, None, False)
             except Exception as e:
-                LOG.error("Error when downloading %s - Pass - %s" % (conftest_repo,str(e)))               
+                LOG.error("Error when downloading %s - Pass - %s" %
+                          (conftest_repo, str(e)))
 
         if (not os.path.isdir("%s/policy" % chartdir)):
             LOG.info('conftest : No policy found in %s - pass' % chartdir)
             return
 
-        conftest_cmd = ConftestCommand(self._cmd,'', True)
+        conftest_cmd = ConftestCommand(self._cmd, '', True)
         cmd = "test --policy policy"
         if (os.path.isdir("%s/data" % chartdir)):
-           cmd = "%s --data data" % cmd
+            cmd = "%s --data data" % cmd
 
         # Boucle sur tous les namespaces
-        conftest_ns = self._context.getParamOrEnv('conftest-namespaces','').split(",")
+        conftest_ns = self._context.getParamOrEnv(
+            'conftest-namespaces', '').split(",")
         LOG.info("=============================================================")
         LOG.info("== CONFTEST                                               ==")
         LOG.info("=============================================================")
         for ns in conftest_ns:
-          if (ns == "all"):
-              cmd = "%s --all-namespaces" % (cmd)
-          elif not ns == "":
-              cmd = "%s --namespace=%s" % (cmd, ns)
+            if (ns == "all"):
+                cmd = "%s --all-namespaces" % (cmd)
+            elif not ns == "":
+                cmd = "%s --namespace=%s" % (cmd, ns)
 
-          conftest_cmd.run("%s %s" % (cmd, ' '.join(charts)), None, None, chartdir if withWorkingDir else False)
+            conftest_cmd.run("%s %s" % (cmd, ' '.join(charts)),
+                             None, None, chartdir if withWorkingDir else False)
 
     def isHelm2(self):
         return self._context.getParamOrEnv("helm-version") == '2'
@@ -1085,52 +1237,62 @@ class CLIDriver(object):
         return quiet or os.getenv('CDP_LOG_LEVEL', None) == 'warning'
 
     def downloadChart(self, chartdir, chart_repo, use_chart):
-        if (chart_repo == "" or chart_repo == "none" ):
+        if (chart_repo == "" or chart_repo == "none"):
             return
 
-        chart_repo = chart_repo.replace("/","%2F")
-        if (use_chart != "" and use_chart != "none" ):
+        chart_repo = chart_repo.replace("/", "%2F")
+        if (use_chart != "" and use_chart != "none"):
 
-            try: 
-               helm_chart = use_chart.split(":")
-               chart_name = helm_chart[0]
-               chart_sha = "master" if len(helm_chart) == 1 else helm_chart[1]
-               strip=chart_name.count("/") + 2 # Pour ne créer le répertoire du chart
+            try:
+                helm_chart = use_chart.split(":")
+                chart_name = helm_chart[0]
+                chart_sha = "master" if len(helm_chart) == 1 else helm_chart[1]
+                # Pour ne créer le répertoire du chart
+                strip = chart_name.count("/") + 2
 
-               cmd = 'curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz?sha=%s | tar zx --wildcards --strip %s -C %s \'*/%s\'' % (os.environ['CDP_GITLAB_API_TOKEN'], os.environ['CDP_GITLAB_API_URL'], chart_repo,chart_sha, strip, chartdir, chart_name)
-               self._cmd.run_secret_command(cmd.strip())
+                cmd = 'curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz?sha=%s | tar zx --wildcards --strip %s -C %s \'*/%s\'' % (
+                    os.environ['CDP_GITLAB_API_TOKEN'], os.environ['CDP_GITLAB_API_URL'], chart_repo, chart_sha, strip, chartdir, chart_name)
+                self._cmd.run_secret_command(cmd.strip())
             except Exception as e:
-                LOG.error("Error when downloading %s - Pass - %s/%s" % (chart_repo, use_chart,str(e)))               
+                LOG.error("Error when downloading %s - Pass - %s/%s" %
+                          (chart_repo, use_chart, str(e)))
 
     def check_runner_permissions(self, commande):
-        cmds = os.getenv("CDP_ALLOWED_CMD","maven,docker,k8s,artifactory,conftest").split(",")
+        cmds = os.getenv("CDP_ALLOWED_CMD",
+                         "maven,docker,k8s,artifactory,conftest").split(",")
         if not commande in cmds:
-           LOG.warning("\x1b[31;1mWARN : Command cdp %s is not allowed in this environnement. Please change the runner tag\x1b[0m" % commande)
+            LOG.warning(
+                "\x1b[31;1mWARN : Command cdp %s is not allowed in this environnement. Please change the runner tag\x1b[0m" % commande)
 
     def check_mutually_exclusives_options(self, opt, options, minOccurrences=0):
-            nbExclusiveOptions = 0
-            for exclusiveOption in options:
-                if opt[exclusiveOption]:
-                    nbExclusiveOptions = nbExclusiveOptions +1
+        nbExclusiveOptions = 0
+        for exclusiveOption in options:
+            if opt[exclusiveOption]:
+                nbExclusiveOptions = nbExclusiveOptions + 1
 
-            if nbExclusiveOptions > 1:
-               sys.exit("\x1b[31;1mERROR : Options %s are mutually exclusives\x1b[0m" % ",".join(options))               
+        if nbExclusiveOptions > 1:
+            sys.exit(
+                "\x1b[31;1mERROR : Options %s are mutually exclusives\x1b[0m" % ",".join(options))
 
-            if nbExclusiveOptions < minOccurrences:
-               sys.exit("%s of %s is required (%s/%s)" % (minOccurrences, ",".join(options),minOccurrences,nbExclusiveOptions))
-               sys.exit("\x1b[31;1mERROR : %s of %s is required (%s/%s)\x1b[0m"% (minOccurrences, ",".join(options),minOccurrences,nbExclusiveOptions))               
+        if nbExclusiveOptions < minOccurrences:
+            sys.exit("%s of %s is required (%s/%s)" % (minOccurrences,
+                     ",".join(options), minOccurrences, nbExclusiveOptions))
+            sys.exit("\x1b[31;1mERROR : %s of %s is required (%s/%s)\x1b[0m" %
+                     (minOccurrences, ",".join(options), minOccurrences, nbExclusiveOptions))
+
     def add_value_to_command_if_not_empty(self, command, param, value):
         if value is not None:
-           return '%s --set %s=%s' % (command, param, value)        
+            return '%s --set %s=%s' % (command, param, value)
         else:
-           return command
+            return command
 
     def add_custom_values(self, command):
-       values = self._context.getParamOrEnv("custom-values")
-       if values is not None:
-          aValues = values.split(",")
-          for value in aValues:
-            if ("=" in value):
-               aValue = value.split("=")
-               command = '%s --set %s=%s' % (command, aValue[0], aValue[1])        
-       return command
+        values = self._context.getParamOrEnv("custom-values")
+        if values is not None:
+            aValues = values.split(",")
+            for value in aValues:
+                if ("=" in value):
+                    aValue = value.split("=")
+                    command = '%s --set %s=%s' % (command,
+                                                  aValue[0], aValue[1])
+        return command
