@@ -1,5 +1,5 @@
 FROM openpolicyagent/conftest:v0.41.0 AS conftest
-FROM alpine:3.17
+FROM alpine:3.18
 
 ARG VERSION_HADOLINT="v2.7.0"
 ARG VERSION_KUBECTL="v1.22.1"
