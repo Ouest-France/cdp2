@@ -47,6 +47,7 @@ Usage:
         [--release-project-branch-name] [--release-project-env-name] [--release-project-name] [--release-shortproject-name] [--release-namespace-name] [--release-custom-name=<release_name>] [--release-name=<release_name>]
         [--image-pull-secret] [--ingress-tlsSecretName=<secretName>] [--ingress-tlsSecretNamespace=<secretNamespace>]
         [--ingress-className=<className>] [--ingress-className-alternate=<className>]
+        [--with-carto] [--carto-repo=<repo:branch>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
         [--volume-from=<host_type>]
@@ -72,6 +73,8 @@ Options:
     --chart-subtype=<subtype>                                  Subtype of chart if needed. Allowed values : php
     --additional-chart-repo=<repo>                             Path of additional repository of default charts
     --use-additional-chart=<chart:branch>                      Name of the pre-defined chart for the additional repository to use. Format : name or name:branch
+    --with-carto                                               Run carto import. Default : false
+    --carto-repo=<repo:branch>                                 Gitlab project for carto program. CDP_CARTO_REPO is used if empty. none value overrides env var.
     --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
     --conftest-namespaces=<namespaces>                         Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACES is used if empty.
     --create-default-helm                                      Create default helm for simple project (One docker image).
@@ -691,6 +694,8 @@ class CLIDriver(object):
            # Tout s'est bien passé, on clean la release ou le namespace si dernière release
            if cleanupHelm2:
               self._cmd.run_command("/cdp/scripts/cleanup.sh %s -r %s" % ("-n " + namespace if self._context.opt['--tiller-namespace'] else "", release))            
+           # Ajout des ressources dans la carto
+           self.addToCarto('%s/all_resources.yaml' % (final_template_deploy_spec_dir))
    
         self.__update_environment()
 
@@ -1114,6 +1119,38 @@ class CLIDriver(object):
                self._cmd.run_secret_command(cmd.strip())
             except Exception as e:
                 LOG.error("Error when downloading %s - Pass - %s/%s" % (chart_repo, use_chart,str(e)))               
+
+
+    def addToCarto(self, helm_templates):
+
+        carto_repo = self._context.getParamOrEnv("carto-repo","")
+        executeCarto = self._context.getParamOrEnv("with-carto","false")
+
+        if (executeCarto is not True and executeCarto != "true"):
+            return
+        
+        if (carto_repo == "" or carto_repo == "none" ):
+            return
+
+        # Pas de carto pour les releases temporaires
+        if (self._context.opt['--release-ttl']):
+            return
+        
+        carto_repo = carto_repo.replace("/","%2F")
+        cartoDir = "carto"
+        #os.mkdir(cartoDir)
+        try: 
+            carto_sha = "master"
+            if (":" in carto_repo):
+                acarto = carto_repo.split(":")
+                carto_repo = acarto[0]
+                carto_sha = acarto[1]
+            cmd = 'mkdir -p %s && curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz?sha=%s | tar zx --wildcards -C %s --strip-components=1' % (cartoDir,os.environ['CDP_GITLAB_API_TOKEN'], os.environ['CDP_GITLAB_API_URL'], carto_repo,carto_sha, cartoDir)
+            self._cmd.run_secret_command(cmd.strip())
+            self._cmd.run_command("python3 %s/cartographie/handleHelmAllRessources.py %s master" % (cartoDir, helm_templates))
+        except Exception as e:
+                LOG.error("Error when executing carto %s : %s" % (carto_repo,str(e)))               
+
 
     def check_runner_permissions(self, commande):
         cmds = os.getenv("CDP_ALLOWED_CMD","maven,docker,k8s,artifactory,conftest").split(",")

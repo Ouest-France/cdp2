@@ -20,12 +20,8 @@ class CLICommand(object):
         LOG.info(command)
         return self.run(command, dry_run, timeout, raise_error, no_test)
 
-    def run_secret_command(self, command, dry_run = None, timeout = None, raise_error = True):
-        if "CDP_DEBUG" in os.environ:
-            LOG.info('')
-            LOG.info('******************** Run command (debug) ********************')
-            LOG.info(command)
-        return self.run(command, dry_run, timeout, raise_error)
+    def run_secret_command(self, command, dry_run = None, timeout = None, raise_error = True,  no_test = False):
+        return self.run(command, dry_run, timeout, raise_error, no_test)
         
     def run(self, command, dry_run = None, timeout = None, raise_error = True, no_test = False):
         start = timeit.default_timer()
