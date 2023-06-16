@@ -541,15 +541,17 @@ class CLIDriver(object):
         if (alternateIngressClassName):
             set_command = '%s --set ingress.alternateIngressClassName=%s' % (set_command, alternateIngressClassName)
 
-        image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
-        image_pull_secret_value = image_pull_secret_value.replace(':', '-')
+        #image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
+        #image_pull_secret_value = image_pull_secret_value.replace(':', '-')
+        image_pull_secret_value = "of-registries-secret"
 
         # Need to add secret file for docker registry
         if not self._context.opt['--use-registry'] == 'aws-ecr' and not self._context.opt['--use-registry'] == 'none':
             # Add secret (Only if secret is not exist )
-            self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
-            set_command = '%s --set image.credentials.username=%s' % (set_command, self._context.registry_user_ro)
-            set_command = '%s --set image.credentials.password=%s' % (set_command, self._context.string_protected(self._context.registry_token_ro))
+#            # Add secret (Only if secret is not exist )
+#            self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
+#            set_command = '%s --set image.credentials.username=%s' % (set_command, self._context.registry_user_ro)
+#            set_command = '%s --set image.credentials.password=%s' % (set_command, self._context.string_protected(self._context.registry_token_ro))
             set_command = '%s --set image.imagePullSecrets=%s' % (set_command, image_pull_secret_value)
 
         if self._context.opt['--create-gitlab-secret'] or self._context.opt['--create-gitlab-secret-hook'] :

@@ -35,10 +35,6 @@ class Context(object):
                 self._registry_token_ro = login_regex[0][1]
                 # Login AWS registry
                 self.__login(self._registry, self._registry_user_ro,self._registry_token_ro)
-            else:
-                self.__login(os.getenv('CDP_%s_REGISTRY' % opt['--login-registry'].upper(), None),
-                             os.getenv('CDP_%s_REGISTRY_USER' % opt['--login-registry'].upper(), None),
-                             os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--login-registry'].upper(), None))
 
         # Login to Dockerhub if needed
         self.__loginDockerhub()
@@ -57,19 +53,18 @@ class Context(object):
                 self.__set_registry(os.getenv('CI_REGISTRY', None),
                                     os.getenv('CI_DEPLOY_USER', None),
                                     os.getenv('CI_DEPLOY_PASSWORD', None))
-                # Login gitlab registry
-                self.__login(os.getenv('CI_REGISTRY', None),
-                             os.getenv('CI_REGISTRY_USER', None),
-                             os.getenv('CI_JOB_TOKEN', None))
             else:
                 ### Used by '--use-registry' params
                 registry = opt['--use-registry'].upper()
                 self.__set_registry(os.getenv('CDP_%s_REGISTRY' % registry,None),
-                                    self.getRegistryReadOnlyUser(registry),
-                                    os.getenv('CDP_%s_REGISTRY_READ_ONLY_TOKEN' % registry,None))
+                                    os.getenv('CDP_%s_REGISTRY_USER' % registry,None),
+                                    os.getenv('CDP_%s_REGISTRY_TOKEN' % registry,None))
+            # Login on all registries
+            for registry in ["HARBOR", "GITLAB", "ARTIFACTORY"]:
                 self.__login(os.getenv('CDP_%s_REGISTRY' % registry, None),
                              os.getenv('CDP_%s_REGISTRY_USER' % registry, None),
                              os.getenv('CDP_%s_REGISTRY_TOKEN' % registry, None))
+
 
     def __set_registry(self,registry,user_ro,token_ro):
         self._registry = registry
@@ -184,7 +179,7 @@ class Context(object):
           encodedStr = str(encodedBytes, "ascii")
 
           self.auths["auths"][registry] = {"auth": encodedStr}
-          self._cmd.run_secret_command("echo '%s' > ~/.docker/config.json" % ( json.dumps(self.auths)))
+          self._cmd.run_secret_command("echo '%s' > ~/.docker/config.json" % ( json.dumps(self.auths)),no_test=True)
 
     ## Get option passed in command line or env variable if not set. Env variable is the upper param prefixed by CDP_ and dash replaced by underscore
     def getParamOrEnv(self, param, defaultValue = None):
