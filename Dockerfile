@@ -1,5 +1,5 @@
-FROM openpolicyagent/conftest:v0.41.0 AS conftest
-FROM alpine:3.17
+FROM openpolicyagent/conftest:v0.43.1 AS conftest
+FROM alpine:3.18
 
 ARG VERSION_HADOLINT="v2.7.0"
 ARG VERSION_KUBECTL="v1.22.1"
@@ -15,7 +15,7 @@ ADD https://storage.googleapis.com/kubernetes-release/release/${VERSION_KUBECTL}
 
 WORKDIR /cdp
 
-RUN apk -v --no-cache add tar ca-certificates python3  python3-dev  skopeo coreutils podman  \
+RUN apk -v --no-cache add tar ca-certificates python3  python3-dev  skopeo coreutils podman \
       groff less mailcap curl openrc build-base libgit2-dev autoconf automake libtool jq git openssh unzip \
     && chmod +x /bin/hadolint && chmod +x /bin/kubectl \
     && if [[ ! -e /usr/bin/python ]]; then ln -sf /usr/bin/python3 /usr/bin/python; fi \
@@ -26,6 +26,7 @@ RUN apk -v --no-cache add tar ca-certificates python3  python3-dev  skopeo coreu
     && pip install --upgrade wheel \
     && pip install awscli \
     && pip install -r requirements.txt \
+    && apk -v add gettext \
     && apk -v --no-cache --purge del py-pip autoconf automake libtool build-base libgit2-dev python3-dev \
     && curl -L https://get.helm.sh/helm-${VERSION_HELM}-linux-amd64.tar.gz | tar zxv -C /tmp/ --strip-components=1 linux-amd64/helm && mv /tmp/helm /bin/helm3 && chmod +x /bin/helm3 \
     && curl -L https://get.helm.sh/helm-${VERSION_HELM2}-linux-amd64.tar.gz | tar zxv -C /tmp/ --strip-components=1 linux-amd64/helm && mv /tmp/helm /bin/helm2 && chmod +x /bin/helm2 \

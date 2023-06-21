@@ -47,6 +47,7 @@ Usage:
         [--release-project-branch-name] [--release-project-env-name] [--release-project-name] [--release-shortproject-name] [--release-namespace-name] [--release-custom-name=<release_name>] [--release-name=<release_name>]
         [--image-pull-secret] [--ingress-tlsSecretName=<secretName>] [--ingress-tlsSecretNamespace=<secretNamespace>]
         [--ingress-className=<className>] [--ingress-className-alternate=<className>]
+        [--with-carto] [--carto-repo=<repo:branch>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
         [--volume-from=<host_type>]
@@ -72,6 +73,8 @@ Options:
     --chart-subtype=<subtype>                                  Subtype of chart if needed. Allowed values : php
     --additional-chart-repo=<repo>                             Path of additional repository of default charts
     --use-additional-chart=<chart:branch>                      Name of the pre-defined chart for the additional repository to use. Format : name or name:branch
+    --with-carto                                               Run carto import. Default : false
+    --carto-repo=<repo:branch>                                 Gitlab project for carto program. CDP_CARTO_REPO is used if empty. none value overrides env var.
     --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
     --conftest-namespaces=<namespaces>                         Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACES is used if empty.
     --create-default-helm                                      Create default helm for simple project (One docker image).
@@ -144,15 +147,13 @@ Deprecated options:
     --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup. use release-ttl instead [DEPRECATED] 
 """
 import base64
-import configparser
 import sys, os, re
 import logging, verboselogs
-import time, datetime
+import datetime
 import json
 import gitlab
 import pyjq
 import shutil
-import glob
 
 
 from .Context import Context
@@ -168,6 +169,7 @@ from .conftestcommand import ConftestCommand
 from docopt import docopt, DocoptExit
 from .PropertiesParser import PropertiesParser
 from .Yaml import Yaml
+from os import system
 from envsubst import envsubst
 
 LOG = verboselogs.VerboseLogger('clidriver')
@@ -539,15 +541,17 @@ class CLIDriver(object):
         if (alternateIngressClassName):
             set_command = '%s --set ingress.alternateIngressClassName=%s' % (set_command, alternateIngressClassName)
 
-        image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
-        image_pull_secret_value = image_pull_secret_value.replace(':', '-')
+        #image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
+        #image_pull_secret_value = image_pull_secret_value.replace(':', '-')
+        image_pull_secret_value = "of-registries-secret"
 
         # Need to add secret file for docker registry
         if not self._context.opt['--use-registry'] == 'aws-ecr' and not self._context.opt['--use-registry'] == 'none':
             # Add secret (Only if secret is not exist )
-            self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
-            set_command = '%s --set image.credentials.username=%s' % (set_command, self._context.registry_user_ro)
-            set_command = '%s --set image.credentials.password=%s' % (set_command, self._context.string_protected(self._context.registry_token_ro))
+#            # Add secret (Only if secret is not exist )
+#            self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
+#            set_command = '%s --set image.credentials.username=%s' % (set_command, self._context.registry_user_ro)
+#            set_command = '%s --set image.credentials.password=%s' % (set_command, self._context.string_protected(self._context.registry_token_ro))
             set_command = '%s --set image.imagePullSecrets=%s' % (set_command, image_pull_secret_value)
 
         if self._context.opt['--create-gitlab-secret'] or self._context.opt['--create-gitlab-secret-hook'] :
@@ -561,11 +565,6 @@ class CLIDriver(object):
                     self.__create_secret("secret",envVar,envValue,secretEnvPattern)
                 if envVar.startswith(fileSecretEnvPattern.upper(), 0):
                     self.__create_secret("file-secret", envVar, envValue, fileSecretEnvPattern)
-
-        set_command = self.add_value_to_command_if_not_empty(set_command, "team", self._context.getParamOrEnv("team"))
-        set_command = self.add_value_to_command_if_not_empty(set_command, "teamDomain", self._context.getParamOrEnv("team-domain"))
-        set_command = self.add_value_to_command_if_not_empty(set_command, "logcollector.logindex", self._context.getParamOrEnv("logindex"))
-        set_command = self.add_value_to_command_if_not_empty(set_command, "logcollector.logtopic", self._context.getParamOrEnv("logtopic"))
 
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
@@ -595,11 +594,27 @@ class CLIDriver(object):
             template_command = 'template %s' % (self._context.opt['--deploy-spec-dir'])
         
         template_command = '%s %s' % (template_command, set_command)
-        template_command = self.add_custom_values(template_command)
         if self._context.opt['--values']:
             valuesFiles = self._context.opt['--values'].strip().split(',')
             values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
             template_command = '%s %s' % (template_command, values)
+
+
+        # Custom values set to values-cdp.yml
+        values_cdp = {}
+        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "team", self._context.getParamOrEnv("team"))
+        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "teamDomain", self._context.getParamOrEnv("team-domain"))
+        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "logcollector.logindex", self._context.getParamOrEnv("logindex"))
+        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "logcollector.logtopic", self._context.getParamOrEnv("logtopic"))
+        values_cdp = self.add_custom_values(values_cdp)
+        #values_cdp = self.add_env_vars(values_cdp)
+        if len(values_cdp) > 0:
+            values_cdp_file = '%s/values-cdp.yaml' % self._context.opt['--deploy-spec-dir']
+            with open(values_cdp_file, "w") as f:
+                LOG.verbose(yaml.dump_all(values_cdp))
+                yaml.dump(values_cdp, f)
+
+            template_command = '%s --values %s' % (template_command, values_cdp_file)   
 
         if self.isHelm2():
           template_command = '%s --name=%s' % (template_command, release)
@@ -622,30 +637,33 @@ class CLIDriver(object):
 
         with open(tmp_templating_file, 'r') as stream:
             docs = list(yaml.load_all(stream))
-            final_docs = []
-            for doc in docs:
-                if doc is not None:
-                    # Ajout du label deletable sur tous les objets si la release est temporaire
-                    if "metadata" in doc and "labels" in doc['metadata']:
-                       doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--release-ttl'] else "false"
 
-                    final_docs.append(doc)
-                    CLIDriver.addGitlabLabels(doc)
-                    #Manage Deployement and
-                    if os.getenv('CDP_MONITORING')and os.getenv('CDP_MONITORING', 'TRUE').upper() != "FALSE":
-                        if os.getenv('CDP_ALERTING', 'TRUE').upper()=="FALSE":
-                            doc = CLIDriver.addMonitoringLabel(doc, False)
-                        else:
-                            doc = CLIDriver.addMonitoringLabel(doc, True)
-                    # Ajout du champ imagePulLSecrets seulement si par les charts par défaut car déjà prévu. Retro-compatiibilité
-                    if not self._context.opt['--use-chart']:
-                        if not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
-                           doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
-                    
-                    LOG.verbose(doc)
+        final_docs = []
+        for doc in docs:
+            if doc is not None:
+                # Ajout du label deletable sur tous les objets si la release est temporaire
+                if "metadata" in doc and "labels" in doc['metadata']:
+                   doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--release-ttl'] else "false"
+                final_docs.append(doc)
+                CLIDriver.addGitlabLabels(doc)
+                #Manage Deployement and
+                if os.getenv('CDP_MONITORING')and os.getenv('CDP_MONITORING', 'TRUE').upper() != "FALSE":
+                    if os.getenv('CDP_ALERTING', 'TRUE').upper()=="FALSE":
+                        doc = CLIDriver.addMonitoringLabel(doc, False)
+                    else:
+                        doc = CLIDriver.addMonitoringLabel(doc, True)
+                # Ajout du champ imagePulLSecrets seulement si pas par les charts par défaut car déjà prévu. Retro-compatiibilité
+                if not self._context.opt['--use-chart']:
+                    if not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
+                       doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
+                
+                LOG.verbose(doc)
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
-            LOG.info(yaml.dump_all(final_docs))
             yaml.dump_all(final_docs, outfile)
+
+        # Replace environnement variables
+        self.envsubst_values(final_template_deploy_spec_dir)
+        system('cat %s/all_resources.yaml' % (final_template_deploy_spec_dir))
 
         #Run conftest
         conftest_temp_dir = '%s_conftest' % self._context.opt['--deploy-spec-dir']
@@ -678,6 +696,8 @@ class CLIDriver(object):
            # Tout s'est bien passé, on clean la release ou le namespace si dernière release
            if cleanupHelm2:
               self._cmd.run_command("/cdp/scripts/cleanup.sh %s -r %s" % ("-n " + namespace if self._context.opt['--tiller-namespace'] else "", release))            
+           # Ajout des ressources dans la carto
+           self.addToCarto('%s/all_resources.yaml' % (final_template_deploy_spec_dir))
    
         self.__update_environment()
 
@@ -1102,6 +1122,38 @@ class CLIDriver(object):
             except Exception as e:
                 LOG.error("Error when downloading %s - Pass - %s/%s" % (chart_repo, use_chart,str(e)))               
 
+
+    def addToCarto(self, helm_templates):
+
+        carto_repo = self._context.getParamOrEnv("carto-repo","")
+        executeCarto = self._context.getParamOrEnv("with-carto","false")
+
+        if (executeCarto is not True and executeCarto != "true"):
+            return
+        
+        if (carto_repo == "" or carto_repo == "none" ):
+            return
+
+        # Pas de carto pour les releases temporaires
+        if (self._context.opt['--release-ttl']):
+            return
+        
+        carto_repo = carto_repo.replace("/","%2F")
+        cartoDir = "carto"
+        #os.mkdir(cartoDir)
+        try: 
+            carto_sha = "master"
+            if (":" in carto_repo):
+                acarto = carto_repo.split(":")
+                carto_repo = acarto[0]
+                carto_sha = acarto[1]
+            cmd = 'mkdir -p %s && curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz?sha=%s | tar zx --wildcards -C %s --strip-components=1' % (cartoDir,os.environ['CDP_GITLAB_API_TOKEN'], os.environ['CDP_GITLAB_API_URL'], carto_repo,carto_sha, cartoDir)
+            self._cmd.run_secret_command(cmd.strip())
+            self._cmd.run_command("python3 %s/cartographie/handleHelmAllRessources.py %s master" % (cartoDir, helm_templates))
+        except Exception as e:
+                LOG.error("Error when executing carto %s : %s" % (carto_repo,str(e)))               
+
+
     def check_runner_permissions(self, commande):
         cmds = os.getenv("CDP_ALLOWED_CMD","maven,docker,k8s,artifactory,conftest").split(",")
         if not commande in cmds:
@@ -1119,18 +1171,45 @@ class CLIDriver(object):
             if nbExclusiveOptions < minOccurrences:
                sys.exit("%s of %s is required (%s/%s)" % (minOccurrences, ",".join(options),minOccurrences,nbExclusiveOptions))
                sys.exit("\x1b[31;1mERROR : %s of %s is required (%s/%s)\x1b[0m"% (minOccurrences, ",".join(options),minOccurrences,nbExclusiveOptions))               
-    def add_value_to_command_if_not_empty(self, command, param, value):
-        if value is not None:
-           return '%s --set %s=%s' % (command, param, value)        
-        else:
-           return command
 
-    def add_custom_values(self, command):
+    def add_value_to_command_if_not_empty(self, values_cdp, param, value):
+        if value is not None:
+             values_tmp = values_cdp
+             params = param.split(".")
+             key = params[-1]
+             keys = params[:-1]
+             if len(keys) > 0:
+               for k in  keys:
+                 if not k in values_tmp:
+                    values_tmp[k] = {}
+                 values_tmp= values_tmp[k]
+             values_tmp[key] = value
+        return values_cdp
+    
+    def add_custom_values(self, values_cdp):
        values = self._context.getParamOrEnv("custom-values")
        if values is not None:
           aValues = values.split(",")
           for value in aValues:
             if ("=" in value):
                aValue = value.split("=")
-               command = '%s --set %s=%s' % (command, aValue[0], aValue[1])        
-       return command
+               self.add_value_to_command_if_not_empty(values_cdp, aValue[0], aValue[1])
+       return values_cdp
+
+    def add_env_vars(self, values_cdp):
+       values = self._context.getParamOrEnv("env-vars")
+       if values is not None:
+          LOG.info("Setting %s as secrets" % values)
+          aValues = values.split(",")
+          for envvar in aValues:
+              if (len(os.getenv(envvar, '')) > 0 ):
+                 value = os.getenv(envvar) 
+                 LOG.info("Setting %s = %s as secrets" % (envvar, value))
+                 self.add_value_to_command_if_not_empty(values_cdp, "deployment.secrets." + envvar, value,)
+       return values_cdp
+
+    def envsubst_values(self, dir):
+        tmp_chart_dir = "/tmp"
+        valuesFile = "all_resources.yaml"
+        self._cmd.run('/usr/bin/envsubst "$(printf \'${%%s} \' $(env | cut -d\'=\' -f1))" < %s/%s > %s/%s.new && mv %s/%s.new %s/%s' % 
+                      (dir, valuesFile, tmp_chart_dir, valuesFile,tmp_chart_dir, valuesFile, dir, valuesFile), no_test = True)
