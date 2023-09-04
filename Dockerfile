@@ -1,4 +1,4 @@
-FROM openpolicyagent/conftest:v0.43.1 AS conftest
+FROM openpolicyagent/conftest:v0.45.0 AS conftest
 FROM alpine:3.18
 
 ARG VERSION_HADOLINT="v2.7.0"
