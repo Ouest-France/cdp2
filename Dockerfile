@@ -1,5 +1,5 @@
 FROM openpolicyagent/conftest:v0.46.0 AS conftest
-FROM alpine:3.18
+FROM alpine:3.19
 
 ARG VERSION_HADOLINT="v2.12.0"
 ARG VERSION_KUBECTL="v1.29.0"
@@ -15,15 +15,12 @@ ADD https://storage.googleapis.com/kubernetes-release/release/${VERSION_KUBECTL}
 
 WORKDIR /cdp
 
-RUN apk -v --no-cache add tar ca-certificates python3  python3-dev  skopeo coreutils podman \
+RUN apk -v --no-cache add tar ca-certificates python3  python3-dev  skopeo coreutils podman py3-setuptools py3-pip py3-wheel\
       groff less mailcap curl openrc build-base libgit2-dev autoconf automake libtool jq git openssh unzip \
     && chmod +x /bin/hadolint && chmod +x /bin/kubectl \
     && if [[ ! -e /usr/bin/python ]]; then ln -sf /usr/bin/python3 /usr/bin/python; fi \
-    && python -m ensurepip \
     && if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi \
-    && pip install --upgrade pip setuptools --break-system-packages \
     && ln -s /usr/lib/libcurl.so.4 /usr/lib/libcurl-gnutls.so.4 \
-    && pip install --upgrade wheel --break-system-packages\
     && pip install awscli --break-system-packages \
     && pip install --break-system-packages -r requirements.txt \
     && apk -v add gettext \
