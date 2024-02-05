@@ -1,5 +1,5 @@
 FROM openpolicyagent/conftest:v0.48.0 AS conftest
-FROM alpine:3.18
+FROM alpine:3.19
 
 ARG VERSION_HADOLINT="v2.12.0"
 ARG VERSION_KUBECTL="v1.29.0"
@@ -16,7 +16,7 @@ ADD https://storage.googleapis.com/kubernetes-release/release/${VERSION_KUBECTL}
 WORKDIR /cdp
 
 RUN apk -v --no-cache add tar ca-certificates python3  python3-dev  skopeo coreutils podman py3-setuptools py3-pip py3-wheel\
-      groff less mailcap curl openrc build-base libgit2-dev autoconf automake libtool jq git openssh unzip \
+      groff less mailcap curl openrc build-base libgit2-dev autoconf automake libtool jq git openssh unzip iptables-legacy\
     && chmod +x /bin/hadolint && chmod +x /bin/kubectl \
     && if [[ ! -e /usr/bin/python ]]; then ln -sf /usr/bin/python3 /usr/bin/python; fi \
     && if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi \
@@ -29,7 +29,7 @@ RUN apk -v --no-cache add tar ca-certificates python3  python3-dev  skopeo coreu
     && curl -L https://get.helm.sh/helm-${VERSION_HELM2}-linux-amd64.tar.gz | tar zxv -C /tmp/ --strip-components=1 linux-amd64/helm && mv /tmp/helm /bin/helm2 && chmod +x /bin/helm2 \
     && helm3 plugin install https://github.com/helm/helm-2to3 \
     && rm -rf /var/lib/apk/lists/* && rm -rf /var/cache/apk/* /root/.cache /usr/lib/python3.8/site-packages/pip /usr/lib/python3.8/__pycache__ /usr/lib/python3.8/site-packages/awscli/examples /usr/lib/python3.8/site-packages/config-3.8* \
-    && mkdir -p /root/.docker 
+    && mkdir -p /root/.docker && iptables-legacy-save
 RUN  python setup.py install && rm -rf /cdp/..?* .[!.]*
 
 
