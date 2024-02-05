@@ -56,7 +56,7 @@ setup_options = dict(
     setup_requires=['pytest-runner'],
     tests_require=['pytest', 'freezegun'],
     license='Apache License 2.0',
-    classifiers=(
+    classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
@@ -70,7 +70,7 @@ setup_options = dict(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
-    ),
+    ],
 )
 
 setup(**setup_options)
