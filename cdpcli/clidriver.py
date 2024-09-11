@@ -929,7 +929,7 @@ class CLIDriver(object):
         else:
             release = self.__getNamespace()
         # K8s ne supporte plus les . dans les noms de release
-        return release.replace('_', '-').replace(".","-")[:53]
+        return release.replace('_', '-').replace(".","-")[:53].removesuffix("-")
 
     def __getShortProjectName(self):
         namespace = os.environ['CI_PROJECT_NAME']
