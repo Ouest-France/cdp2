@@ -657,6 +657,11 @@ class CLIDriver(object):
                     if not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
                        doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
                 
+                if self._context.getParamOrEnv("no-requests",False):
+                    if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet' or doc['kind'] == 'Job' or doc['kind'] == 'DaemonSet':
+                        for container in range(len(doc["spec"]["template"]["spec"]["containers"])):
+                            doc["spec"]["template"]["spec"]["containers"][container]["resources"]["requests"]["cpu"] = 0
+
                 LOG.verbose(doc)
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
             yaml.dump_all(final_docs, outfile)
