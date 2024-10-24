@@ -15,7 +15,7 @@ ADD https://storage.googleapis.com/kubernetes-release/release/${VERSION_KUBECTL}
 
 WORKDIR /cdp
 
-RUN apk -v --no-cache add tar ca-certificates python3  python3-dev  skopeo coreutils podman py3-setuptools py3-pip py3-wheel\
+RUN apk -v --no-cache add tar ca-certificates python3 iptables-legacy python3-dev  skopeo coreutils podman py3-setuptools py3-pip py3-wheel\
       groff less mailcap curl openrc build-base libgit2-dev autoconf automake libtool jq git openssh unzip \
     && chmod +x /bin/hadolint && chmod +x /bin/kubectl \
     && if [[ ! -e /usr/bin/python ]]; then ln -sf /usr/bin/python3 /usr/bin/python; fi \
