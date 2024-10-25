@@ -1,5 +1,5 @@
 FROM openpolicyagent/conftest:v0.48.0 AS conftest
-FROM alpine:3.19
+FROM alpine:3.20
 
 ARG VERSION_HADOLINT="v2.12.0"
 ARG VERSION_KUBECTL="v1.29.0"
@@ -14,8 +14,7 @@ ADD https://github.com/hadolint/hadolint/releases/download/${VERSION_HADOLINT}/h
 ADD https://storage.googleapis.com/kubernetes-release/release/${VERSION_KUBECTL}/bin/linux/amd64/kubectl /bin/kubectl
 
 WORKDIR /cdp
-
-RUN apk -v --no-cache add tar ca-certificates python3 iptables-legacy python3-dev  skopeo coreutils podman py3-setuptools py3-pip py3-wheel\
+RUN apk -v --no-cache add tar ca-certificates python3 slirp4netns containers-common python3-dev  skopeo coreutils podman py3-setuptools py3-pip py3-wheel\
       groff less mailcap curl openrc build-base libgit2-dev autoconf automake libtool jq git openssh unzip \
     && chmod +x /bin/hadolint && chmod +x /bin/kubectl \
     && if [[ ! -e /usr/bin/python ]]; then ln -sf /usr/bin/python3 /usr/bin/python; fi \
