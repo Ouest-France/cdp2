@@ -152,7 +152,6 @@ import logging, verboselogs
 import datetime
 import json
 import gitlab
-import pyjq
 import shutil
 
 
@@ -500,12 +499,10 @@ class CLIDriver(object):
  
         if self._context.opt['--tiller-namespace'] and self.isHelm2():
             command = '%s --tiller-namespace=%s' % (command, namespace)
-        tiller_length = 0
         tiller_json = ''
         try:
             if not self._context.opt['--tiller-namespace'] and self.isHelm2():
-                tiller_json = ''.join(kubectl_cmd.run('get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % ( namespace )))
-                tiller_length = len(pyjq.first('.items[] | .metadata.labels.name', json.loads(tiller_json)))
+                kubectl_cmd.run('get pod --namespace %s -l name="tiller"|grep "NAME"' % ( namespace ))
                 command = '%s --tiller-namespace=%s' % (command, namespace)
         except Exception as e:
             # Not present
@@ -817,7 +814,7 @@ class CLIDriver(object):
             self._cmd.run_command('hadolint %s/%s' % (context, dockerfile), raise_error = False)
 
             # Tag docker image
-            docker_build_command = 'build -t %s -f %s %s' % (image_tag, full_dockerfile_path, context)
+            docker_build_command = 'build --network=host -t %s -f %s %s' % (image_tag, full_dockerfile_path, context)
             if target is not None:
               docker_build_command = '%s --target %s' % (docker_build_command, target)
             if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and self._context.opt['--use-registry'] == 'artifactory':
