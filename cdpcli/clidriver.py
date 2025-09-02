@@ -590,7 +590,10 @@ class CLIDriver(object):
             template_command = 'template %s %s' % (release, self._context.opt['--deploy-spec-dir'])
         else:
             template_command = 'template %s' % (self._context.opt['--deploy-spec-dir'])
-        
+
+        if self._context.opt['--release-ttl'] :
+            set_command = '%s %s' % (set_command, "--set temporary_release=true")
+
         template_command = '%s %s' % (template_command, set_command)
         if self._context.opt['--values']:
             valuesFiles = self._context.opt['--values'].strip().split(',')
