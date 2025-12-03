@@ -20,6 +20,7 @@ Usage:
         [--build-file=<buildFile>]
         [--login-registry=<registry_name>]
         [--docker-build-target=<target_name>] [--docker-image-aws=<image_name_aws>]
+        [--use-docker-image=<image_name>]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--put=<file> | --delete=<file>)
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
@@ -126,6 +127,7 @@ Options:
     --team-domain=<team-domain>                                Name of the domain of the team. $CDP_TEAM_DOMAIN is used if empty.
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
     --use-docker                                               Use docker to build / push image [default].
+    --use-docker-image=<image_name>                            Use a pre-built docker image instead of building. The image will be retagged and pushed to the registry.
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
     --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
@@ -802,6 +804,14 @@ class CLIDriver(object):
         image_tag = self.__getImageTag(self.__getImageName(), tag)
         if self._context.opt['--use-docker-compose']:
             sys.exit("\x1b[31;1mERROR : docker-compose is deprecated.\x1b[0m")
+
+        # Use pre-built docker image if provided
+        elif self._context.opt['--use-docker-image']:
+            source_image = self._context.opt['--use-docker-image']
+            dest_image_tag = self.__getImageTag(self.__getImageName(), tag)
+            LOG.info("Using pre-built image %s, retagging to %s" % (source_image, dest_image_tag))
+            # Use skopeo to copy/retag the image
+            self._cmd.run_command('skopeo copy docker://%s docker://%s' % (source_image, dest_image_tag))
 
         else:
           images_to_build = self.__getImagesToBuild(self.__getImageName(), tag)
