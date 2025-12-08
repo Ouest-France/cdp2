@@ -48,7 +48,7 @@ Usage:
         [--image-pull-secret] [--ingress-tlsSecretName=<secretName>] [--ingress-tlsSecretNamespace=<secretNamespace>]
         [--ingress-className=<className>] [--ingress-className-alternate=<className>]
         [--with-carto] [--carto-repo=<repo:branch>]
-        [--no-requests]
+        [--force-requests=<0|cpu=<value>,memory=<value>>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
         [--volume-from=<host_type>] [--envsubst]
@@ -111,7 +111,7 @@ Options:
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
     --namespace-name=<namespace_name>                          Use namespace_name to create k8s namespace.
     --no-conftest                                              Do not run conftest validation tests.
-    --no-requests                                              Do not set requests for cpu/memory in k8s deployment.
+    --force-requests=<0|cpu=<value>,memory=<value>>            Force cpu/memory requests for all containers. Use 0 to remove requests.
     --path=<path>                                              Path to validate [default: configurations].
     --put=<file>                                               Put file to artifactory.
     --release-ttl=<minutes>                                    Set ttl (Time to live) time for the release. Will be removed after the time.
