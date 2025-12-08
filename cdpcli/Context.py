@@ -184,14 +184,12 @@ class Context(object):
     ## Get option passed in command line or env variable if not set. Env variable is the upper param prefixed by CDP_ and dash replaced by underscore
     def getParamOrEnv(self, param, defaultValue = None):
         envvar = "CDP_%s" % param.upper().replace("-","_")
-        print("Recherche param %s ou env %s" % (param,envvar))
         value = defaultValue
         try:
           commandlineParam = "--%s" % param
           if self._opt[commandlineParam]:
               value = self._opt[commandlineParam]
           else: 
-            print(os.getenv(envvar, ''))
             if (len(os.getenv(envvar, '')) > 0 ):
                value = os.getenv(envvar)        
         except KeyError: 
