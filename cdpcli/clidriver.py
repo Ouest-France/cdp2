@@ -589,9 +589,9 @@ class CLIDriver(object):
         # Template charts for secret
         tmp_templating_file = '%s/all_resources.tmp' % final_deploy_spec_dir
         if not self.isHelm2():
-            template_command = 'template --validate %s %s' % (release, self._context.opt['--deploy-spec-dir'])
+            template_command = 'template %s %s' % (release, self._context.opt['--deploy-spec-dir'])
         else:
-            template_command = 'template --validate %s' % (self._context.opt['--deploy-spec-dir'])
+            template_command = 'template %s' % (self._context.opt['--deploy-spec-dir'])
 
         if self._context.opt['--release-ttl'] :
             set_command = '%s %s' % (set_command, "--set temporary_release=true")
