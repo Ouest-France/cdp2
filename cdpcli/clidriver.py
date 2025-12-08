@@ -660,14 +660,23 @@ class CLIDriver(object):
                     if not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
                        doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
                 
-                no_requests = self._context.getParamOrEnv("no-requests","false")
-                LOG.verbose("no_requests=%s",no_requests)
-                if (no_requests.lower() == "true" or no_requests is True):
-                    LOG.verbose("suppression des requests cpu/memory")
+                force_requests = self._context.getParamOrEnv("force-requests","")
+                if len(force_requests) > 0:
+                    defaultRequests = {"cpu":"","memory":""}
+                    if force_requests == "0" or force_requests == "true" or force_requests is True:
+                        new_requests = {"cpu":"0","memory":"0"}
+                    else:
+                        requests = dict(item.split("=") for item in force_requests.split(","))
+                        new_requests = {k: requests.get(k, v) for k, v in defaultRequests.items()}
+                    cpuRequest = new_requests["cpu"]
+                    memoryRequest = new_requests["memory"]
                     if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet' or doc['kind'] == 'Job' or doc['kind'] == 'DaemonSet':
+                        LOG.verbose("--> Forçage des requests to cpu=%s memory=%s for %s/%s", cpuRequest, memoryRequest, doc['kind'], doc['metadata']['name'])
                         for container in range(len(doc["spec"]["template"]["spec"]["containers"])):
-                            doc["spec"]["template"]["spec"]["containers"][container]["resources"]["requests"]["cpu"] = 0
-                            doc["spec"]["template"]["spec"]["containers"][container]["resources"]["requests"]["memory"] = 0
+                            if cpuRequest != "":
+                                doc["spec"]["template"]["spec"]["containers"][container]["resources"]["requests"]["cpu"] = cpuRequest
+                            if memoryRequest != "":
+                                doc["spec"]["template"]["spec"]["containers"][container]["resources"]["requests"]["memory"] = memoryRequest
 
                 LOG.verbose(doc)
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
