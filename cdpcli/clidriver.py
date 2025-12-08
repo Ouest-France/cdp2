@@ -659,6 +659,7 @@ class CLIDriver(object):
                        doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
                 
                 no_requests = self._context.getParamOrEnv("no-requests","false")
+                LOG.verbose("no_requests=%s",no_requests)
                 if (no_requests.lower() == "true" or no_requests is True):
                     LOG.verbose("suppression des requests cpu/memory")
                     if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet' or doc['kind'] == 'Job' or doc['kind'] == 'DaemonSet':
