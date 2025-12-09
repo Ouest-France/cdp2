@@ -609,14 +609,14 @@ class CLIDriver(object):
         values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "teamDomain", self._context.getParamOrEnv("team-domain"))
         values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "logcollector.logindex", self._context.getParamOrEnv("logindex"))
         values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "logcollector.logtopic", self._context.getParamOrEnv("logtopic"))
+        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "global.podAutoscalingInstalled", os.getenv('CDP_POD_AUTOSCALING_INSTALLED', 'false'))
         values_cdp = self.add_custom_values(values_cdp)
         #values_cdp = self.add_env_vars(values_cdp)
         if len(values_cdp) > 0:
             values_cdp_file = '%s/values-cdp.yaml' % self._context.opt['--deploy-spec-dir']
             with open(values_cdp_file, "w") as f:
-                LOG.verbose(yaml.dump_all(values_cdp))
+                LOG.verbose(yaml.dump(values_cdp))
                 yaml.dump(values_cdp, f)
-
             template_command = '%s --values %s' % (template_command, values_cdp_file)   
 
         if self.isHelm2():
@@ -685,7 +685,7 @@ class CLIDriver(object):
         # Replace environnement variables
         self.envsubst_values(final_template_deploy_spec_dir)
         system('cat %s/all_resources.yaml' % (final_template_deploy_spec_dir))
-
+        
         #Run conftest
         conftest_temp_dir = '%s_conftest' % self._context.opt['--deploy-spec-dir']
         try:
