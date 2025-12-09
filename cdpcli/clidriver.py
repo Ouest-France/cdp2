@@ -609,14 +609,15 @@ class CLIDriver(object):
         values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "teamDomain", self._context.getParamOrEnv("team-domain"))
         values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "logcollector.logindex", self._context.getParamOrEnv("logindex"))
         values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "logcollector.logtopic", self._context.getParamOrEnv("logtopic"))
-        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "global.podAutoscalingInstalled", os.getenv('CDP_POD_AUTOSCALING_INSTALLED', None))
+        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "global.podAutoscalingInstalled", self.get_bool_env('CDP_POD_AUTOSCALING_INSTALLED'))
         values_cdp = self.add_custom_values(values_cdp)
         #values_cdp = self.add_env_vars(values_cdp)
         if len(values_cdp) > 0:
             values_cdp_file = '%s/values-cdp.yaml' % self._context.opt['--deploy-spec-dir']
             with open(values_cdp_file, "w") as f:
-                LOG.verbose(yaml.dump(values_cdp))
+                LOG.verbose(yaml.dump_all(values_cdp))
                 yaml.dump(values_cdp, f)
+            system('cat %s' % values_cdp_file)
             template_command = '%s --values %s' % (template_command, values_cdp_file)   
 
         if self.isHelm2():
@@ -1235,3 +1236,29 @@ class CLIDriver(object):
           valuesFile = "all_resources.yaml"
           self._cmd.run('/usr/bin/envsubst "$(printf \'${%%s} \' $(env | cut -d\'=\' -f1))" < %s/%s > %s/%s.new && mv %s/%s.new %s/%s' % 
                       (dir, valuesFile, tmp_chart_dir, valuesFile,tmp_chart_dir, valuesFile, dir, valuesFile), no_test = True)
+
+    def get_bool_env(self, var_name: str, default=None):
+        """
+        Récupère une variable d'environnement et la convertit en booléen.
+        
+        Args:
+            var_name (str): nom de la variable d'environnement
+            default (bool | None): valeur de retour si la variable n'existe pas
+    
+        Returns:
+            True, False ou None
+        """
+        value = os.getenv(var_name)
+        if value is None:
+            return default
+    
+        val = value.strip().lower()
+        truthy = {"true", "1", "yes", "on"}
+        falsy = {"false", "0", "no", "off"}
+    
+        if val in truthy:
+            return True
+        elif val in falsy:
+            return False
+        else:
+            return default   
