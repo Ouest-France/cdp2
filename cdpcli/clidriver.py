@@ -609,7 +609,7 @@ class CLIDriver(object):
         values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "teamDomain", self._context.getParamOrEnv("team-domain"))
         values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "logcollector.logindex", self._context.getParamOrEnv("logindex"))
         values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "logcollector.logtopic", self._context.getParamOrEnv("logtopic"))
-        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "global.podAutoscalingInstalled", os.getenv('CDP_POD_AUTOSCALING_INSTALLED', 'false'))
+        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "global.podAutoscalingInstalled", os.getenv('CDP_POD_AUTOSCALING_INSTALLED', None))
         values_cdp = self.add_custom_values(values_cdp)
         #values_cdp = self.add_env_vars(values_cdp)
         if len(values_cdp) > 0:
