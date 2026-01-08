@@ -588,8 +588,13 @@ class CLIDriver(object):
 
         # Template charts for secret
         tmp_templating_file = '%s/all_resources.tmp' % final_deploy_spec_dir
+        # Ajout du kube-version pour la gestion des Capabilities
+        kube_version = os.popen('kubectl version | grep Server|cut -d":" -f2|sed "s/v//g"').read().strip()
+        if len(kube_version) > 0:
+            kube_version = "--kube-version=%s " % kube_version
+
         if not self.isHelm2():
-            template_command = 'template %s %s' % (release, self._context.opt['--deploy-spec-dir'])
+            template_command = 'template %s%s %s' % (kube_version, release, self._context.opt['--deploy-spec-dir'])
         else:
             template_command = 'template %s' % (self._context.opt['--deploy-spec-dir'])
 
@@ -638,6 +643,7 @@ class CLIDriver(object):
                         yaml.dump(data, f)
         except OSError as e:
             LOG.error(str(e))        
+
         helm_cmd.run(template_command)
 
         with open(tmp_templating_file, 'r') as stream:
