@@ -48,6 +48,7 @@ Usage:
         [--image-pull-secret] [--ingress-tlsSecretName=<secretName>] [--ingress-tlsSecretNamespace=<secretNamespace>]
         [--ingress-className=<className>] [--ingress-className-alternate=<className>]
         [--with-carto] [--carto-repo=<repo:branch>]
+        [--force-requests=<0|cpu=<value>,memory=<value>>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
         [--volume-from=<host_type>] [--envsubst]
@@ -110,6 +111,7 @@ Options:
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
     --namespace-name=<namespace_name>                          Use namespace_name to create k8s namespace.
     --no-conftest                                              Do not run conftest validation tests.
+    --force-requests=<0|cpu=<value>,memory=<value>>            Force cpu/memory requests for all containers. Use 0 to remove requests.
     --path=<path>                                              Path to validate [default: configurations].
     --put=<file>                                               Put file to artifactory.
     --release-ttl=<minutes>                                    Set ttl (Time to live) time for the release. Will be removed after the time.
@@ -586,8 +588,17 @@ class CLIDriver(object):
 
         # Template charts for secret
         tmp_templating_file = '%s/all_resources.tmp' % final_deploy_spec_dir
+        # Ajout du kube-version pour la gestion des Capabilities
+        kube_version = os.popen('kubectl version | grep Server|cut -d":" -f2|sed "s/v//g"').read().strip()
+        if len(kube_version) > 0:
+            LOG.verbose("--> Kubernetes server version : %s" % kube_version)
+            kube_version = "--kube-version=%s " % kube_version
+        else:
+            LOG.verbose("--> Can't determine Kubernetes server version")
+            kube_version = ""
+
         if not self.isHelm2():
-            template_command = 'template %s %s' % (release, self._context.opt['--deploy-spec-dir'])
+            template_command = 'template %s%s %s' % (kube_version, release, self._context.opt['--deploy-spec-dir'])
         else:
             template_command = 'template %s' % (self._context.opt['--deploy-spec-dir'])
 
@@ -595,14 +606,9 @@ class CLIDriver(object):
             set_command = '%s %s' % (set_command, "--set temporary_release=true")
 
         template_command = '%s %s' % (template_command, set_command)
-        if self._context.opt['--values']:
-            valuesFiles = self._context.opt['--values'].strip().split(',')
-            values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
-            template_command = '%s %s' % (template_command, values)
-
-
         # Custom values set to values-cdp.yml
         values_cdp = {}
+        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "podAutoscalingInstalled", self.get_bool_env('CDP_POD_AUTOSCALING_INSTALLED'))
         values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "team", self._context.getParamOrEnv("team"))
         values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "teamDomain", self._context.getParamOrEnv("team-domain"))
         values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "logcollector.logindex", self._context.getParamOrEnv("logindex"))
@@ -614,8 +620,15 @@ class CLIDriver(object):
             with open(values_cdp_file, "w") as f:
                 LOG.verbose(yaml.dump_all(values_cdp))
                 yaml.dump(values_cdp, f)
-
+            system('cat %s' % values_cdp_file)
             template_command = '%s --values %s' % (template_command, values_cdp_file)   
+
+        # On met les values specifiques après celles du cdp pour les écraser si besoin
+        if self._context.opt['--values']:
+            valuesFiles = self._context.opt['--values'].strip().split(',')
+            values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
+            template_command = '%s %s' % (template_command, values)
+
 
         if self.isHelm2():
           template_command = '%s --name=%s' % (template_command, release)
@@ -634,6 +647,7 @@ class CLIDriver(object):
                         yaml.dump(data, f)
         except OSError as e:
             LOG.error(str(e))        
+
         helm_cmd.run(template_command)
 
         with open(tmp_templating_file, 'r') as stream:
@@ -658,10 +672,23 @@ class CLIDriver(object):
                     if not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
                        doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
                 
-                if self._context.getParamOrEnv("no-requests",False):
+                force_requests = self._context.getParamOrEnv("force-requests","")
+                if len(force_requests) > 0:
+                    defaultRequests = {"cpu":"","memory":""}
+                    if force_requests == "0" or force_requests == "true" or force_requests is True:
+                        new_requests = {"cpu":"0","memory":"0"}
+                    else:
+                        requests = dict(item.split("=") for item in force_requests.split(","))
+                        new_requests = {k: requests.get(k, v) for k, v in defaultRequests.items()}
+                    cpuRequest = new_requests["cpu"]
+                    memoryRequest = new_requests["memory"]
                     if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet' or doc['kind'] == 'Job' or doc['kind'] == 'DaemonSet':
+                        LOG.verbose("--> Forçage des requests to cpu=%s memory=%s for %s/%s", cpuRequest, memoryRequest, doc['kind'], doc['metadata']['name'])
                         for container in range(len(doc["spec"]["template"]["spec"]["containers"])):
-                            doc["spec"]["template"]["spec"]["containers"][container]["resources"]["requests"]["cpu"] = 0
+                            if cpuRequest != "":
+                                doc["spec"]["template"]["spec"]["containers"][container]["resources"]["requests"]["cpu"] = cpuRequest
+                            if memoryRequest != "":
+                                doc["spec"]["template"]["spec"]["containers"][container]["resources"]["requests"]["memory"] = memoryRequest
 
                 LOG.verbose(doc)
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
@@ -670,7 +697,7 @@ class CLIDriver(object):
         # Replace environnement variables
         self.envsubst_values(final_template_deploy_spec_dir)
         system('cat %s/all_resources.yaml' % (final_template_deploy_spec_dir))
-
+        
         #Run conftest
         conftest_temp_dir = '%s_conftest' % self._context.opt['--deploy-spec-dir']
         try:
@@ -1220,3 +1247,29 @@ class CLIDriver(object):
           valuesFile = "all_resources.yaml"
           self._cmd.run('/usr/bin/envsubst "$(printf \'${%%s} \' $(env | cut -d\'=\' -f1))" < %s/%s > %s/%s.new && mv %s/%s.new %s/%s' % 
                       (dir, valuesFile, tmp_chart_dir, valuesFile,tmp_chart_dir, valuesFile, dir, valuesFile), no_test = True)
+
+    def get_bool_env(self, var_name: str, default=None):
+        """
+        Récupère une variable d'environnement et la convertit en booléen.
+        
+        Args:
+            var_name (str): nom de la variable d'environnement
+            default (bool | None): valeur de retour si la variable n'existe pas
+    
+        Returns:
+            True, False ou None
+        """
+        value = os.getenv(var_name)
+        if value is None:
+            return default
+    
+        val = value.strip().lower()
+        truthy = {"true", "1", "yes", "on"}
+        falsy = {"false", "0", "no", "off"}
+    
+        if val in truthy:
+            return True
+        elif val in falsy:
+            return False
+        else:
+            return default   
