@@ -603,14 +603,14 @@ class CLIDriver(object):
             template_command = 'template %s' % (self._context.opt['--deploy-spec-dir'])
 
         if self._context.opt['--release-ttl'] :
-            set_command = '%s %s' % (set_command, "--set global.temporary_release=true")
+            set_command = '%s %s' % (set_command, "--set temporary_release=true")
 
         template_command = '%s %s' % (template_command, set_command)
         # Custom values set to values-cdp.yml
         values_cdp = {}
-        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "global.podAutoscalingInstalled", self.get_bool_env('CDP_POD_AUTOSCALING_INSTALLED'))
-        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "global.team", self._context.getParamOrEnv("team"))
-        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "global.teamDomain", self._context.getParamOrEnv("team-domain"))
+        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "podAutoscalingInstalled", self.get_bool_env('CDP_POD_AUTOSCALING_INSTALLED'))
+        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "team", self._context.getParamOrEnv("team"))
+        values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "teamDomain", self._context.getParamOrEnv("team-domain"))
         values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "logcollector.logindex", self._context.getParamOrEnv("logindex"))
         values_cdp = self.add_value_to_command_if_not_empty(values_cdp, "logcollector.logtopic", self._context.getParamOrEnv("logtopic"))
         values_cdp = self.add_custom_values(values_cdp)
