@@ -591,7 +591,11 @@ class CLIDriver(object):
         # Ajout du kube-version pour la gestion des Capabilities
         kube_version = os.popen('kubectl version | grep Server|cut -d":" -f2|sed "s/v//g"').read().strip()
         if len(kube_version) > 0:
+            LOG.verbose("--> Kubernetes server version : %s" % kube_version)
             kube_version = "--kube-version=%s " % kube_version
+        else:
+            LOG.verbose("--> Can't determine Kubernetes server version")
+            kube_version = ""
 
         if not self.isHelm2():
             template_command = 'template %s%s %s' % (kube_version, release, self._context.opt['--deploy-spec-dir'])
