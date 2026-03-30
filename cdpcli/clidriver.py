@@ -215,7 +215,7 @@ class CLIDriver(object):
             self._context = Context(opt, cmd, LOG)
             LOG.verbose('Context : %s', self._context.__dict__)
 
-            deprecated = {'docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-conftest','docker-image','use-docker-compose','namespace-project-branch-name',"volume-from"}
+            deprecated = {'docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-conftest','docker-image','use-docker-compose','namespace-project-branch-name',"volume-from","with-carto","carto-repo"}
             for option in deprecated:
                if (self._context.getParamOrEnv(option)):
                  LOG.warning("\x1b[31;1mWARN : Option %s is DEPRECATED and will not be used\x1b[0m",option)
@@ -729,8 +729,6 @@ class CLIDriver(object):
            # Tout s'est bien passé, on clean la release ou le namespace si dernière release
            if cleanupHelm2:
               self._cmd.run_command("/cdp/scripts/cleanup.sh %s -r %s" % ("-n " + namespace if self._context.opt['--tiller-namespace'] else "", release))            
-           # Ajout des ressources dans la carto
-           self.addToCarto('%s/all_resources.yaml' % (final_template_deploy_spec_dir))
    
         self.__update_environment()
 
@@ -1154,38 +1152,6 @@ class CLIDriver(object):
                self._cmd.run_secret_command(cmd.strip())
             except Exception as e:
                 LOG.error("Error when downloading %s - Pass - %s/%s" % (chart_repo, use_chart,str(e)))               
-
-
-    def addToCarto(self, helm_templates):
-
-        carto_repo = self._context.getParamOrEnv("carto-repo","")
-        executeCarto = self._context.getParamOrEnv("with-carto","false")
-
-        if (executeCarto is not True and executeCarto != "true"):
-            return
-        
-        if (carto_repo == "" or carto_repo == "none" ):
-            return
-
-        # Pas de carto pour les releases temporaires
-        if (self._context.opt['--release-ttl']):
-            return
-        
-        carto_repo = carto_repo.replace("/","%2F")
-        cartoDir = "carto"
-        #os.mkdir(cartoDir)
-        try: 
-            carto_sha = "master"
-            if (":" in carto_repo):
-                acarto = carto_repo.split(":")
-                carto_repo = acarto[0]
-                carto_sha = acarto[1]
-            cmd = 'mkdir -p %s && curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz?sha=%s | tar zx --wildcards -C %s --strip-components=1' % (cartoDir,os.environ['CDP_GITLAB_API_TOKEN'], os.environ['CDP_GITLAB_API_URL'], carto_repo,carto_sha, cartoDir)
-            self._cmd.run_secret_command(cmd.strip())
-            self._cmd.run_command("python3 %s/cartographie/handleHelmAllRessources.py %s master" % (cartoDir, helm_templates))
-        except Exception as e:
-                LOG.error("Error when executing carto %s : %s" % (carto_repo,str(e)))               
-
 
     def check_runner_permissions(self, commande):
         cmds = os.getenv("CDP_ALLOWED_CMD","maven,docker,k8s,artifactory,conftest").split(",")
