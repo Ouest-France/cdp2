@@ -7,7 +7,7 @@
     <mirror>
       <id>artifactory-mirror</id>
       <url>${env.CDP_REPOSITORY_URL}/maven-all</url>
-      <mirrorOf>*</mirrorOf>
+      <mirrorOf>central</mirrorOf>
     </mirror>
   </mirrors>
 
@@ -43,12 +43,6 @@
       
       <repositories>
         <repository>
-          <id>central</id>
-          <url>https://repo.maven.apache.org/maven2</url>
-          <releases><enabled>true</enabled></releases>
-          <snapshots><enabled>false</enabled></snapshots>
-        </repository>
-        <repository>
           <id>release</id>
           <url>${env.CDP_REPOSITORY_URL}/${env.CDP_REPOSITORY_MAVEN_RELEASE}</url>
           <releases><enabled>true</enabled></releases>
@@ -62,6 +56,12 @@
             <enabled>true</enabled>
             <updatePolicy>always</updatePolicy>
           </snapshots>
+        </repository>
+        <repository>
+          <id>central</id>
+          <url>https://repo.maven.apache.org/maven2</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
         </repository>
       </repositories>
 
