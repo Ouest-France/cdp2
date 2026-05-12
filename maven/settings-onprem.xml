@@ -70,6 +70,21 @@
           <id>central-plugin</id>
           <url>https://repo.maven.apache.org/maven2</url>
         </pluginRepository>
+        <pluginRepository>
+          <id>release</id>
+          <url>${env.CDP_PLUGINREPOSITORY_URL}/${env.CDP_PLUGINREPOSITORY_MAVEN_RELEASE}</url>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </pluginRepository>
+        <pluginRepository>
+          <id>snapshot</id>
+          <url>${env.CDP_PLUGINREPOSITORY_URL}/${env.CDP_PLUGINREPOSITORY_MAVEN_SNAPSHOT}</url>
+          <snapshots>
+            <enabled>true</enabled>
+            <updatePolicy>always</updatePolicy>
+          </snapshots>
+        </pluginRepository>
         </pluginRepositories>
     </profile>
   </profiles>
