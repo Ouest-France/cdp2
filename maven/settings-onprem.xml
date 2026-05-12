@@ -7,7 +7,7 @@
     <mirror>
       <id>artifactory-mirror</id>
       <url>${env.CDP_REPOSITORY_URL}/maven-all</url>
-      <mirrorOf>central</mirrorOf>
+      <mirrorOf>central,central-plugin</mirrorOf>
     </mirror>
   </mirrors>
 
@@ -67,7 +67,7 @@
 
       <pluginRepositories>
         <pluginRepository>
-          <id>central</id>
+          <id>central-plugin</id>
           <url>https://repo.maven.apache.org/maven2</url>
         </pluginRepository>
         </pluginRepositories>
