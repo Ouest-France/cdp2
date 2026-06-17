@@ -833,6 +833,7 @@ class CLIDriver(object):
         build_args = sorted(self._context.opt['--build-arg']) if self._context.opt['--build-arg'] else []
 
         def build_and_push(image_to_build):
+            composant = image_to_build["composant"]
             img_cmd = PodmanCommand(self._cmd)
             dockerfile = image_to_build["dockerfile"]
             context = image_to_build["context"]
@@ -843,6 +844,7 @@ class CLIDriver(object):
             full_dockerfile_path = context + '/' + dockerfile
             image_tag = image_to_build["image"]
 
+            LOG.info('========== [%s] build start ==========' % composant)
             self._cmd.run_command('hadolint %s/%s' % (context, dockerfile), raise_error=False)
 
             docker_build_command = 'build --network=host -t %s -f %s %s' % (image_tag, full_dockerfile_path, context)
@@ -855,9 +857,11 @@ class CLIDriver(object):
 
             img_cmd.run(docker_build_command)
             img_cmd.run('push %s' % image_tag)
+            LOG.info('========== [%s] build done ==========' % composant)
 
         if self._context.opt['--parallel']:
-            with ThreadPoolExecutor() as executor:
+            max_workers = min(len(images_to_build), 8)
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 futures = [executor.submit(build_and_push, img) for img in images_to_build]
                 for future in as_completed(futures):
                     future.result()

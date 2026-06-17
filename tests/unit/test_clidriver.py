@@ -5,6 +5,7 @@ from __future__ import print_function
 import unittest
 import os, sys, re, base64, json
 import datetime
+import threading
 
 from cdpcli.clicommand import CLICommand
 from cdpcli.mavencommand import MavenCommand
@@ -123,6 +124,32 @@ class FakeCommand(object):
         run_docker_cmd = MavenCommand.get_command(prg_cmd,docker_image)
 
         return run_docker_cmd
+
+
+class FakeParallelCommand(object):
+    """FakeCommand thread-safe pour tester l'exécution parallèle.
+    Collecte toutes les commandes appelées sans contrainte d'ordre."""
+
+    def __init__(self):
+        self._called = []
+        self._lock = threading.Lock()
+        self._tc = unittest.TestCase('__init__')
+
+    def run_command(self, cmd, dry_run=None, timeout=None, raise_error=True, no_test=False):
+        return self.run(cmd, dry_run, timeout, raise_error, no_test)
+
+    def run_secret_command(self, cmd, dry_run=None, timeout=None, raise_error=True, no_test=False):
+        return self.run(cmd, dry_run, timeout, raise_error, no_test)
+
+    def run(self, cmd, dry_run=None, timeout=None, raise_error=True, no_test=False):
+        if not no_test:
+            with self._lock:
+                self._called.append(cmd)
+        return []
+
+    def verify_commands(self, expected_cmds):
+        self._tc.assertCountEqual(self._called, expected_cmds)
+
 
 class TestCliDriver(unittest.TestCase):
     unittest.TestCase.maxDiff = None
@@ -531,6 +558,29 @@ services:
             {'cmd': 'podman push %s:%s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name.lower() + "/nginx",  TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'}
           ]
           self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor',"--build-file=cdp-build-file.yml"}, verif_cmd)
+
+    @patch('cdpcli.clidriver.os.path.isfile', return_value=True)
+    def test_docker_usedocker_parallel_multi_build(self, mock_is_file):
+        self.fakeauths["auths"] = {}
+
+        m = mock_open_cdp_build_file = mock_open(read_data=TestCliDriver.build_file)
+        m.side_effect = [mock_open_cdp_build_file.return_value]
+
+        with patch("builtins.open", m):
+            php_image = '%s:%s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name.lower() + "/php", TestCliDriver.ci_commit_ref_slug)
+            nginx_image = '%s:%s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name.lower() + "/nginx", TestCliDriver.ci_commit_ref_slug)
+            expected_cmds = [
+                'hadolint ./distribution/php7-fpm/Dockerfile',
+                'podman build --network=host -t %s -f %s %s' % (php_image, './distribution/php7-fpm/Dockerfile', './distribution/php7-fpm'),
+                'podman push %s' % php_image,
+                'hadolint ./distribution/nginx/Dockerfile',
+                'podman build --network=host -t %s -f %s %s --target toto' % (nginx_image, './distribution/nginx/Dockerfile', './distribution/nginx'),
+                'podman push %s' % nginx_image,
+            ]
+            cmd = FakeParallelCommand()
+            cli = CLIDriver(cmd=cmd, opt=docopt(__doc__, {'docker', '--use-docker', '--use-registry=harbor', '--build-file=cdp-build-file.yml', '--parallel'}))
+            cli.main()
+            cmd.verify_commands(expected_cmds)
 
 
     def test_docker_usedocker_imagetagsha1_usecustomregistry(self):

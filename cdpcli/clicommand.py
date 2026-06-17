@@ -55,7 +55,8 @@ class CLICommand(object):
         thread.join(timeout if timeout is None else float(timeout))
 
         if thread.is_alive():
-            process.terminate()
+            if process is not None:
+                process.terminate()
             thread.join()
 
         LOG.info('---------- Time: %s s' % (round(timeit.default_timer() - start, 3)))
