@@ -18,7 +18,7 @@ Usage:
         [--build-context=<path>]
         [--build-arg=<arg> ...]
         [--build-file=<buildFile>]
-        [--parallel]
+        [--parallel=<workers>]
         [--login-registry=<registry_name>]
         [--docker-build-target=<target_name>] [--docker-image-aws=<image_name_aws>]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
@@ -112,7 +112,7 @@ Options:
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
     --namespace-name=<namespace_name>                          Use namespace_name to create k8s namespace.
     --no-conftest                                              Do not run conftest validation tests.
-    --parallel                                                 Build multiple images in parallel. Requires --build-file.
+    --parallel=<workers>                                       Build multiple images in parallel. Requires --build-file. Default: 8 workers.
     --force-requests=<0|cpu=<value>,memory=<value>>            Force cpu/memory requests for all containers. Use 0 to remove requests.
     --path=<path>                                              Path to validate [default: configurations].
     --put=<file>                                               Put file to artifactory.
@@ -858,8 +858,8 @@ class CLIDriver(object):
 
         images_to_build = self.__getImagesToBuild(self.__getImageName(), tag)
 
-        if self._context.opt['--parallel']:
-            max_workers = min(len(images_to_build), 8)
+        if self._context.opt['--parallel'] is not None:
+            max_workers = max(1, int(self._context.opt['--parallel']))
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 futures = [executor.submit(self.__buildAndPushImage, img) for img in images_to_build]
                 for future in as_completed(futures):

@@ -578,7 +578,7 @@ services:
                 'podman push %s' % nginx_image,
             ]
             cmd = FakeParallelCommand()
-            cli = CLIDriver(cmd=cmd, opt=docopt(__doc__, {'docker', '--use-docker', '--use-registry=harbor', '--build-file=cdp-build-file.yml', '--parallel'}))
+            cli = CLIDriver(cmd=cmd, opt=docopt(__doc__, {'docker', '--use-docker', '--use-registry=harbor', '--build-file=cdp-build-file.yml', '--parallel=8'}))
             cli.main()
             cmd.verify_commands(expected_cmds)
 
@@ -609,7 +609,7 @@ services:
                     'podman push %s' % image,
                 ]
             cmd = FakeParallelCommand()
-            cli = CLIDriver(cmd=cmd, opt=docopt(__doc__, {'docker', '--use-docker', '--use-registry=harbor', '--build-file=cdp-build-file.yml', '--parallel'}))
+            cli = CLIDriver(cmd=cmd, opt=docopt(__doc__, {'docker', '--use-docker', '--use-registry=harbor', '--build-file=cdp-build-file.yml', '--parallel=8'}))
             cli.main()
             cmd.verify_commands(expected_cmds)
 
