@@ -825,6 +825,33 @@ class CLIDriver(object):
         
       return prefixTag
         
+    def __buildAndPushImage(self, image_to_build, build_args):
+        composant = image_to_build["composant"]
+        img_cmd = PodmanCommand(self._cmd)
+        dockerfile = image_to_build["dockerfile"]
+        context = image_to_build["context"]
+        target = image_to_build["target"]
+        if target is None and self._context.opt['--docker-build-target']:
+            target = self._context.opt['--docker-build-target']
+
+        full_dockerfile_path = context + '/' + dockerfile
+        image_tag = image_to_build["image"]
+
+        LOG.info('========== [%s] build start ==========' % composant)
+        self._cmd.run_command('hadolint %s/%s' % (context, dockerfile), raise_error=False)
+
+        docker_build_command = 'build --network=host -t %s -f %s %s' % (image_tag, full_dockerfile_path, context)
+        if target is not None:
+            docker_build_command = '%s --target %s' % (docker_build_command, target)
+        if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and self._context.opt['--use-registry'] == 'artifactory':
+            docker_build_command = '%s --label com.jfrog.artifactory.retention.maxCount="%s"' % (docker_build_command, os.environ['CDP_ARTIFACTORY_TAG_RETENTION'])
+        for buildarg in build_args:
+            docker_build_command = '%s --build-arg %s' % (docker_build_command, buildarg)
+
+        img_cmd.run(docker_build_command)
+        img_cmd.run('push %s' % image_tag)
+        LOG.info('========== [%s] build done ==========' % composant)
+
     def __buildTagAndPushOnDockerRegistry(self, tag):
         if self._context.opt['--use-docker-compose']:
             sys.exit("\x1b[31;1mERROR : docker-compose is deprecated.\x1b[0m")
@@ -832,42 +859,15 @@ class CLIDriver(object):
         images_to_build = self.__getImagesToBuild(self.__getImageName(), tag)
         build_args = sorted(self._context.opt['--build-arg']) if self._context.opt['--build-arg'] else []
 
-        def build_and_push(image_to_build):
-            composant = image_to_build["composant"]
-            img_cmd = PodmanCommand(self._cmd)
-            dockerfile = image_to_build["dockerfile"]
-            context = image_to_build["context"]
-            target = image_to_build["target"]
-            if target is None and self._context.opt['--docker-build-target']:
-                target = self._context.opt['--docker-build-target']
-
-            full_dockerfile_path = context + '/' + dockerfile
-            image_tag = image_to_build["image"]
-
-            LOG.info('========== [%s] build start ==========' % composant)
-            self._cmd.run_command('hadolint %s/%s' % (context, dockerfile), raise_error=False)
-
-            docker_build_command = 'build --network=host -t %s -f %s %s' % (image_tag, full_dockerfile_path, context)
-            if target is not None:
-                docker_build_command = '%s --target %s' % (docker_build_command, target)
-            if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and self._context.opt['--use-registry'] == 'artifactory':
-                docker_build_command = '%s --label com.jfrog.artifactory.retention.maxCount="%s"' % (docker_build_command, os.environ['CDP_ARTIFACTORY_TAG_RETENTION'])
-            for buildarg in build_args:
-                docker_build_command = '%s --build-arg %s' % (docker_build_command, buildarg)
-
-            img_cmd.run(docker_build_command)
-            img_cmd.run('push %s' % image_tag)
-            LOG.info('========== [%s] build done ==========' % composant)
-
         if self._context.opt['--parallel']:
             max_workers = min(len(images_to_build), 8)
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                futures = [executor.submit(build_and_push, img) for img in images_to_build]
+                futures = [executor.submit(self.__buildAndPushImage, img, build_args) for img in images_to_build]
                 for future in as_completed(futures):
                     future.result()
         else:
             for image_to_build in images_to_build:
-                build_and_push(image_to_build)
+                self.__buildAndPushImage(image_to_build, build_args)
             
     def __conftest(self):
         dir = self._context.opt['--deploy-spec-dir']
