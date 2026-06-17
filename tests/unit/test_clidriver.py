@@ -9,7 +9,7 @@ import threading
 
 from cdpcli.clicommand import CLICommand
 from cdpcli.mavencommand import MavenCommand
-from cdpcli.clidriver import CLIDriver, __doc__
+from cdpcli.clidriver import CLIDriver, __doc__, normalize_args
 from docopt import docopt, DocoptExit
 from freezegun import freeze_time
 from mock import call, patch, Mock, MagicMock, mock_open
@@ -149,6 +149,18 @@ class FakeParallelCommand(object):
 
     def verify_commands(self, expected_cmds):
         self._tc.assertCountEqual(self._called, expected_cmds)
+
+
+class TestNormalizeArgs(unittest.TestCase):
+
+    def test_parallel_without_value_defaults_to_8(self):
+        self.assertEqual(normalize_args(['docker', '--parallel']), ['docker', '--parallel=8'])
+
+    def test_parallel_with_explicit_value_is_unchanged(self):
+        self.assertEqual(normalize_args(['docker', '--parallel=16']), ['docker', '--parallel=16'])
+
+    def test_without_parallel_is_unchanged(self):
+        self.assertEqual(normalize_args(['docker', '--use-registry=harbor']), ['docker', '--use-registry=harbor'])
 
 
 class TestCliDriver(unittest.TestCase):
