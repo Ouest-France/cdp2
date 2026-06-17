@@ -582,6 +582,36 @@ services:
             cli.main()
             cmd.verify_commands(expected_cmds)
 
+    @patch('cdpcli.clidriver.os.path.isfile', return_value=True)
+    def test_docker_usedocker_parallel_multi_build_with_total_builds_exceeding_max_workers_number(self, mock_is_file):
+        self.fakeauths["auths"] = {}
+
+        services = ['svc-%d' % i for i in range(1, 10)]  # 9 services > max_workers (8)
+        build_file_large = "version: '3'\nservices:\n"
+        for svc in services:
+            build_file_large += (
+                "  %s:\n"
+                "    image: ${CDP_REGISTRY:-local}/%s:${CDP_TAG:-latest}\n"
+                "    build:\n"
+                "      context: ./%s\n"
+                "      dockerfile: Dockerfile\n"
+            ) % (svc, svc, svc)
+
+        m = mock_open(read_data=build_file_large)
+        with patch("builtins.open", m):
+            registry = TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name.lower()
+            expected_cmds = []
+            for svc in services:
+                image = '%s/%s:%s' % (registry, svc, TestCliDriver.ci_commit_ref_slug)
+                expected_cmds += [
+                    'hadolint ./%s/Dockerfile' % svc,
+                    'podman build --network=host -t %s -f ./%s/Dockerfile ./%s' % (image, svc, svc),
+                    'podman push %s' % image,
+                ]
+            cmd = FakeParallelCommand()
+            cli = CLIDriver(cmd=cmd, opt=docopt(__doc__, {'docker', '--use-docker', '--use-registry=harbor', '--build-file=cdp-build-file.yml', '--parallel'}))
+            cli.main()
+            cmd.verify_commands(expected_cmds)
 
     def test_docker_usedocker_imagetagsha1_usecustomregistry(self):
         # Create FakeCommand
