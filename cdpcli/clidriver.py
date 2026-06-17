@@ -825,7 +825,7 @@ class CLIDriver(object):
         
       return prefixTag
         
-    def __buildAndPushImage(self, image_to_build, build_args):
+    def __buildAndPushImage(self, image_to_build):
         composant = image_to_build["composant"]
         img_cmd = PodmanCommand(self._cmd)
         dockerfile = image_to_build["dockerfile"]
@@ -845,7 +845,7 @@ class CLIDriver(object):
             docker_build_command = '%s --target %s' % (docker_build_command, target)
         if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and self._context.opt['--use-registry'] == 'artifactory':
             docker_build_command = '%s --label com.jfrog.artifactory.retention.maxCount="%s"' % (docker_build_command, os.environ['CDP_ARTIFACTORY_TAG_RETENTION'])
-        for buildarg in build_args:
+        for buildarg in sorted(self._context.opt['--build-arg']) if self._context.opt['--build-arg'] else []:
             docker_build_command = '%s --build-arg %s' % (docker_build_command, buildarg)
 
         img_cmd.run(docker_build_command)
@@ -857,17 +857,16 @@ class CLIDriver(object):
             sys.exit("\x1b[31;1mERROR : docker-compose is deprecated.\x1b[0m")
 
         images_to_build = self.__getImagesToBuild(self.__getImageName(), tag)
-        build_args = sorted(self._context.opt['--build-arg']) if self._context.opt['--build-arg'] else []
 
         if self._context.opt['--parallel']:
             max_workers = min(len(images_to_build), 8)
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                futures = [executor.submit(self.__buildAndPushImage, img, build_args) for img in images_to_build]
+                futures = [executor.submit(self.__buildAndPushImage, img) for img in images_to_build]
                 for future in as_completed(futures):
                     future.result()
         else:
             for image_to_build in images_to_build:
-                self.__buildAndPushImage(image_to_build, build_args)
+                self.__buildAndPushImage(image_to_build)
             
     def __conftest(self):
         dir = self._context.opt['--deploy-spec-dir']
