@@ -189,7 +189,8 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == "build":
         sys.exit("\x1b[31;1mERROR : build command is deprecated\x1b[0m")
 
-    opt = docopt(__doc__, sys.argv[1:], version=__version__)
+    args = ['--parallel=8' if arg == '--parallel' else arg for arg in sys.argv[1:]]
+    opt = docopt(__doc__, args, version=__version__)
 
     # Log management
     log_level = logging.INFO
