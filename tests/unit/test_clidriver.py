@@ -5,10 +5,11 @@ from __future__ import print_function
 import unittest
 import os, sys, re, base64, json
 import datetime
+import threading
 
 from cdpcli.clicommand import CLICommand
 from cdpcli.mavencommand import MavenCommand
-from cdpcli.clidriver import CLIDriver, __doc__
+from cdpcli.clidriver import CLIDriver, __doc__, normalize_args
 from docopt import docopt, DocoptExit
 from freezegun import freeze_time
 from mock import call, patch, Mock, MagicMock, mock_open
@@ -123,6 +124,44 @@ class FakeCommand(object):
         run_docker_cmd = MavenCommand.get_command(prg_cmd,docker_image)
 
         return run_docker_cmd
+
+
+class FakeParallelCommand(object):
+    """FakeCommand thread-safe pour tester l'exécution parallèle.
+    Collecte toutes les commandes appelées sans contrainte d'ordre."""
+
+    def __init__(self):
+        self._called = []
+        self._lock = threading.Lock()
+        self._tc = unittest.TestCase('__init__')
+
+    def run_command(self, cmd, dry_run=None, timeout=None, raise_error=True, no_test=False):
+        return self.run(cmd, dry_run, timeout, raise_error, no_test)
+
+    def run_secret_command(self, cmd, dry_run=None, timeout=None, raise_error=True, no_test=False):
+        return self.run(cmd, dry_run, timeout, raise_error, no_test)
+
+    def run(self, cmd, dry_run=None, timeout=None, raise_error=True, no_test=False):
+        if not no_test:
+            with self._lock:
+                self._called.append(cmd)
+        return []
+
+    def verify_commands(self, expected_cmds):
+        self._tc.assertCountEqual(self._called, expected_cmds)
+
+
+class TestNormalizeArgs(unittest.TestCase):
+
+    def test_parallel_without_value_defaults_to_8(self):
+        self.assertEqual(normalize_args(['docker', '--parallel']), ['docker', '--parallel=8'])
+
+    def test_parallel_with_explicit_value_is_unchanged(self):
+        self.assertEqual(normalize_args(['docker', '--parallel=16']), ['docker', '--parallel=16'])
+
+    def test_without_parallel_is_unchanged(self):
+        self.assertEqual(normalize_args(['docker', '--use-registry=harbor']), ['docker', '--use-registry=harbor'])
+
 
 class TestCliDriver(unittest.TestCase):
     unittest.TestCase.maxDiff = None
@@ -532,6 +571,59 @@ services:
           ]
           self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor',"--build-file=cdp-build-file.yml"}, verif_cmd)
 
+    @patch('cdpcli.clidriver.os.path.isfile', return_value=True)
+    def test_docker_usedocker_parallel_multi_build(self, mock_is_file):
+        self.fakeauths["auths"] = {}
+
+        m = mock_open_cdp_build_file = mock_open(read_data=TestCliDriver.build_file)
+        m.side_effect = [mock_open_cdp_build_file.return_value]
+
+        with patch("builtins.open", m):
+            php_image = '%s:%s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name.lower() + "/php", TestCliDriver.ci_commit_ref_slug)
+            nginx_image = '%s:%s' % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name.lower() + "/nginx", TestCliDriver.ci_commit_ref_slug)
+            expected_cmds = [
+                'hadolint ./distribution/php7-fpm/Dockerfile',
+                'podman build --network=host -t %s -f %s %s' % (php_image, './distribution/php7-fpm/Dockerfile', './distribution/php7-fpm'),
+                'podman push %s' % php_image,
+                'hadolint ./distribution/nginx/Dockerfile',
+                'podman build --network=host -t %s -f %s %s --target toto' % (nginx_image, './distribution/nginx/Dockerfile', './distribution/nginx'),
+                'podman push %s' % nginx_image,
+            ]
+            cmd = FakeParallelCommand()
+            cli = CLIDriver(cmd=cmd, opt=docopt(__doc__, {'docker', '--use-docker', '--use-registry=harbor', '--build-file=cdp-build-file.yml', '--parallel=8'}))
+            cli.main()
+            cmd.verify_commands(expected_cmds)
+
+    @patch('cdpcli.clidriver.os.path.isfile', return_value=True)
+    def test_docker_usedocker_parallel_multi_build_with_total_builds_exceeding_max_workers_number(self, mock_is_file):
+        self.fakeauths["auths"] = {}
+
+        services = ['svc-%d' % i for i in range(1, 10)]  # 9 services > max_workers (8)
+        build_file_large = "version: '3'\nservices:\n"
+        for svc in services:
+            build_file_large += (
+                "  %s:\n"
+                "    image: ${CDP_REGISTRY:-local}/%s:${CDP_TAG:-latest}\n"
+                "    build:\n"
+                "      context: ./%s\n"
+                "      dockerfile: Dockerfile\n"
+            ) % (svc, svc, svc)
+
+        m = mock_open(read_data=build_file_large)
+        with patch("builtins.open", m):
+            registry = TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name.lower()
+            expected_cmds = []
+            for svc in services:
+                image = '%s/%s:%s' % (registry, svc, TestCliDriver.ci_commit_ref_slug)
+                expected_cmds += [
+                    'hadolint ./%s/Dockerfile' % svc,
+                    'podman build --network=host -t %s -f ./%s/Dockerfile ./%s' % (image, svc, svc),
+                    'podman push %s' % image,
+                ]
+            cmd = FakeParallelCommand()
+            cli = CLIDriver(cmd=cmd, opt=docopt(__doc__, {'docker', '--use-docker', '--use-registry=harbor', '--build-file=cdp-build-file.yml', '--parallel=8'}))
+            cli.main()
+            cmd.verify_commands(expected_cmds)
 
     def test_docker_usedocker_imagetagsha1_usecustomregistry(self):
         # Create FakeCommand
