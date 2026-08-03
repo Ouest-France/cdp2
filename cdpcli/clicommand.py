@@ -25,28 +25,29 @@ class CLICommand(object):
         
     def run(self, command, dry_run = None, timeout = None, raise_error = True, no_test = False):
         start = timeit.default_timer()
-        self._process = None
-        self._output = []
+        process = None
+        output = []
         if "CDP_DEBUG" in os.environ:
           LOG.verbose('******************** Run command (debug) ********************')
           LOG.verbose(command)
 
         if dry_run is None:
-            self._real_dry_run = self._dry_run
+            real_dry_run = self._dry_run
         else:
-            self._real_dry_run = dry_run
+            real_dry_run = dry_run
 
         def target():
+            nonlocal process
             LOG.info('---------- Output ----------')
             # If dry-run option, no execute command
-            if not self._real_dry_run:
-                self._process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+            if not real_dry_run:
+                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
                 while True:
-                    line = self._process.stdout.readline().decode('UTF-8')
-                    if line.strip() == '' and self._process.poll() is not None:
+                    line = process.stdout.readline().decode('UTF-8')
+                    if line.strip() == '' and process.poll() is not None:
                         break
                     if line:
-                        self._output.append(line.strip())
+                        output.append(line.strip())
                         LOG.info(line.rstrip('\n'))
 
         thread = threading.Thread(target=target)
@@ -54,16 +55,17 @@ class CLICommand(object):
         thread.join(timeout if timeout is None else float(timeout))
 
         if thread.is_alive():
-            self._process.terminate()
+            if process is not None:
+                process.terminate()
             thread.join()
 
         LOG.info('---------- Time: %s s' % (round(timeit.default_timer() - start, 3)))
         LOG.info('')
-        LOG.verbose('---------- CLICommand output: %s' % self._output)
+        LOG.verbose('---------- CLICommand output: %s' % output)
         LOG.verbose('')
 
-        if raise_error and self._process is not None and self._process.returncode != 0:
+        if raise_error and process is not None and process.returncode != 0:
             LOG.warning('---------- ERROR ----------')
-            raise OSError(self._process.returncode,'Error code %s' % self._process.returncode)
+            raise OSError(process.returncode,'Error code %s' % process.returncode)
 
-        return self._output
+        return output
